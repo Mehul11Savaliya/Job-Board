@@ -1,0 +1,55 @@
+<%- include('templates/userprofile_header.ejs') %>
+
+    <div class="container-fluid">
+        <!-- <div class="d-flex"> -->
+            <!-- <div class="p-8" style="max-height: 85vh;overflow-y: scroll;"> -->
+                <div class="jobcards p-4" style="height: 85vh;max-height: 85vh;overflow-y: scroll;">
+                                        
+                </div>
+                
+            <!-- </div> -->
+            <!-- <div class="p-8">
+                <div class="jobcontent p-8">
+                </div>
+            </div> -->
+        <!-- </div> -->
+    </div>
+
+    <!-- Send Email Modal -->
+    <div class="modal fade" id="sendMessage" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">New message</h5>
+            <button type="button" class="btn-close" onclick="closemodal()" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="mb-3">
+                <label for="recipient-name" class="col-form-label">Recipient:</label>
+                <input type="text" class="form-control" id="recipient-name" disabled>
+              </div>
+              <div class="mb-3">
+                <label for="msgdt" class="col-form-label">Message:</label>
+                <textarea class="form-control" id="msgdt"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closemodal()">Close</button>
+            <button type="button" id="sndmsgbtn" class="btn btn-primary">Send message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    //  let mdl =  document.getElementById("sendMessage");
+    //  mdl.classList.toggle("show");
+    
+
+    </script>
+
+    <%- include('templates/userprofile_footer.ejs') %>
+
+    <script src="/static/scripts/userprofile_appliedjob.js"></script>

@@ -1,0 +1,44 @@
+<%- include('templates/cpprofile_header.ejs') %>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    .content {
+      width: 45vw;
+      margin: 2%;
+    }
+  </style>
+  <div class="jobs my-3 mx-3"  style="max-height: 95vh; overflow-y: scroll; width:100vw; max-width: 95vw; overflow-x:schroll">
+  </div>
+  
+  
+
+    <!-- Send Email Modal -->
+    <div class="modal fade" id="sendMessage" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" style="display: none;">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">New message</h5>
+            <button type="button" class="btn-close" onclick="closemodal()" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="mb-3">
+                <label for="recipient-name" class="col-form-label">Recipient:</label>
+                <input type="text" class="form-control" id="recipient-name" disabled>
+              </div>
+              <div class="mb-3">
+                <label for="msgdt" class="col-form-label">Message:</label>
+                <textarea class="form-control" id="msgdt"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closemodal()">Close</button>
+            <button type="button" id="sndmsgbtn" class="btn btn-primary">Send message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  <script src="/static/scripts/cpprofile_postedjob.js"></script>
+  <%- include('templates/cpprofile_footer.ejs') %>
