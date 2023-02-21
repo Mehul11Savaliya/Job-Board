@@ -282,7 +282,8 @@ app.post("/setjob", async (req, res) => {
         fields.pjttl
       );
       //   console.log(paths);
-      const result = await mysq.insertJob(obj, fields, paths[0], paths[1]);
+      const result = await mysq.insertJob(obj, fields, paths[0], paths[1],
+        fields.datetime);
       fields.pjposter = paths[1];
       fields.pjfile=paths[0];
       res.status(201).json({
@@ -324,11 +325,20 @@ app.post("/getJobs", async (req, res) => {
 });
 
 app.post("/deletejob", async (req, res) => {
+ 
+  try {
   const resx = await mysq.deleteJob(
     req.body.cpemail.replaceAll("'", ""),
-    req.body.cpttl.replaceAll("'", "")
+    req.body.cpttl.replaceAll("'", ""),
+    JSON.parse(req.session.cmpny).cpname
   );
-  res.status(201).json({ msg: resx[1] });
+  media.deleteJobMedia(req.body.cpemail.replaceAll("'", ""),
+  req.body.cpttl.replaceAll("'", ""),
+  req.body.extimg.replaceAll("'", ""));
+  res.status(201).json({ msg: resx[1] }); 
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 app.post("/getalljobs", async (req, res) => {
@@ -344,7 +354,7 @@ app.post("/appyJob", async (req, res) => {
     if (validjob[0]) {
       res.status(201).json({ msg: "Already Applied" });
     } else {
-      const resx = await mysq.applyjob(req.body, jobseeker);
+      const resx = await mysq.applyjob(req.body, jobseeker,req.body.datetime);
       res.status(201).json({
         msg: `"Applied Successfully! You Will Reciev Mail From : ${req.body.pjemail}"`,
       });
@@ -650,6 +660,6 @@ app.post("/cpchat/:bhot", async (req, res) => {
   }
 });
 
-app.listen(port, host, () => {
+app.listen(port, () => {
   console.log(`server started at : http://${host}:${port}`);
 });

@@ -16,6 +16,7 @@ fetch("/getalljobs",{
   }
 });
 const updateJobBoard = (data) =>{
+  
 let dv = document.createElement("div");
 dv.setAttribute("data-email",`${data.pjemail}`);
 dv.setAttribute("data-ttl",`${data.pjttl}`);
@@ -32,7 +33,7 @@ dv.innerHTML=`
           <h5 class="card-title">${data.pjcpname}</h5>
           <h5 class="card-title">${data.pjttl}</h5>
           <p class="card-text">${data.pjdisc.replaceAll("\\n","\n")}</p>
-          <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+          <p class="card-text"><small class="text-muted">${new Date(Number.parseInt(data.datetime)).toString()}</small></p>
         </div>
       </div>
     </div>

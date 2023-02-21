@@ -33,6 +33,7 @@ const updateAppliedJob = (obj) => {
                                   <button class="btn btn-outline-warning mx-2" >Request Review</button>
                                 </li>
                                 <li class="nav-item btn btn-info"><b>${item.cpname}</b></li>
+                                <li class="nav-item btn btn-info"><b>Applied On : ${new Date(Number.parseInt(item.datetime)).toString()}</b></li>
                                <!-- <li class="nav-item">
                                   <button class="btn btn-outline-success" onclick="generateModel('${item.details.pjemail}','${item.jobttl}')" data-bs-toggle="modal" data-bs-target="#sendMail" data-bs-whatever="@getbootstrap">Send Mail</button>
                                 </li> -->

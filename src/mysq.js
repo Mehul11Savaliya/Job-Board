@@ -188,11 +188,11 @@ const registerCompany = async (data) => {
 
 
 
-const insertJob = async (cpobj, data,file,pstr) => {
+const insertJob = async (cpobj, data,file,pstr,datetime) => {
     console.time('qry:insertJob');
     return new Promise(async(res,rej)=>{
         
-   let qry = `INSERT INTO postedjobs(\`cpname\`, \`cpemail\`, \`cppass\`,\`ttl\`, \`job\`,\`file\`,\`pstr\`) VALUES ('${cpobj.cpname}','${cpobj.cpemail}','${cpobj.cppass}','${data.pjttl}','${JSON.stringify(data)}','${file}','${pstr}')`;
+   let qry = `INSERT INTO postedjobs(\`cpname\`, \`cpemail\`, \`cppass\`,\`ttl\`, \`job\`,\`file\`,\`pstr\`,\`datetime\`) VALUES ('${cpobj.cpname}','${cpobj.cpemail}','${cpobj.cppass}','${data.pjttl}','${JSON.stringify(data)}','${file}','${pstr}','${datetime}')`;
     const con = await getConnect();
     con.query(qry, (err, resx) => {
      //   console.log(qry);
@@ -219,14 +219,16 @@ const insertJob = async (cpobj, data,file,pstr) => {
 const getJobs = async (email) =>{
     return new Promise(async (res,rej)=>{
         const con = await getConnect();
-        const qry = `SELECT \`ttl\`, \`job\`,\`file\`,\`pstr\` FROM postedjobs WHERE cpemail='${email}'`
+        const qry = `SELECT \`ttl\`, \`job\`,\`file\`,\`pstr\`,\`datetime\` FROM postedjobs WHERE cpemail='${email}'`
         con.query(qry,(err,resx,fields)=>{
             if(err) rej([false,err]);
             else{ 
              //   console.log(qry);
                 let rr = [];
                 Array.from(resx).forEach(val=>{
+                  //  console.log(val);
                     let job = val.job
+                    job['datetime'] = resx.datetime;
                    job = job.replaceAll('\n','\\n');
                    job = job.replaceAll('\r','');
                     
@@ -249,11 +251,12 @@ const getJobs = async (email) =>{
 
 
 
-const deleteJob=  (email,ttl)=>{
+const deleteJob =  (email,ttl,cpname)=>{
   return new Promise(async(res,rej)=>{
        con = await getConnect();
       
       const qry = `DELETE FROM postedjobs WHERE cpemail = '${email}' and ttl='${ttl}'`;
+      const qry2 = `DELETE FROM jobsx where cpname='${cpname}' and jobttl='${ttl}' and cpemail='${email}'`;
 
         con.query(qry,(err,resx)=>{
                 if(err){
@@ -261,16 +264,24 @@ const deleteJob=  (email,ttl)=>{
                     rej([false,err]);
                 }
                 else{
-                    res([true,'job deleted!']);
+                    con.query(qry2,(err,data)=>{
+                        if(err){
+                            rej([false,err]);            
+                        }
+                        else{
+                            con.end((err)=>{
+                                if(err) console.log("deleteJob : cannot destroy");
+                                else{
+                                    console.log("deleteJob : con destroyed with db ");
+                                }
+                            });
+                            res([true,'job deleted!']);
+                        }
+                    });
                 }
         });
 
-       con.end((err)=>{
-              if(err) console.log("deleteJob : cannot destroy");
-              else{
-                  console.log("deleteJob : con destroyed with db ");
-              }
-          });
+     
   });
   }
 
@@ -306,7 +317,7 @@ const getAllJobs = async()=>{
     });
 }
 
-const applyjob = async (cpobj,usrobj)=>{
+const applyjob = async (cpobj,usrobj,datetime)=>{
     return new Promise(async(res,rej)=>{
       try {
         console.time("applyjobqry")
@@ -321,7 +332,7 @@ const applyjob = async (cpobj,usrobj)=>{
         delete usrobj['profile'];
      //   console.table(usrobj);
 
-       const qry=`INSERT INTO jobsx(cpname, jobttl, cpemail,responses) VALUES ('${cpobj.pjcpname}','${cpobj.pjttl}','${cpobj.pjemail}','${JSON.stringify(usrobj)}')`;
+       const qry=`INSERT INTO jobsx(cpname, jobttl, cpemail,responses,datetime) VALUES ('${cpobj.pjcpname}','${cpobj.pjttl}','${cpobj.pjemail}','${JSON.stringify(usrobj)}','${datetime}')`;
        // console.log(qry)
     
         con.query(qry,(err,rex)=>{
@@ -409,12 +420,13 @@ const checkAllAppliedJobForUser = async (userob)=>{
                     console.log(error);
                 }
                 else{
-                //  console.log(resx);
+                
                     for (let item of resx) {
 
                         let data = await getJobDetails(item.cpname,item.cpemail,item.jobttl);
                       //  console.log(data);
                         item.details=data[1];
+                        item['datetime'] = item.datetime;
                      
                     }
                    
@@ -577,7 +589,7 @@ const deleteJobUser = async(obj,userob) =>{
         delete userob['resume'];
         delete userob['profile'];
 
-        const qry = `DELETE FROM jobsx WHERE cpname='${obj.cpname}' AND jobttl='${obj.jobttl}' AND responses='${JSON.stringify(userob)}' AND  `;
+        const qry = `DELETE FROM jobsx WHERE cpname='${obj.cpname}' AND jobttl='${obj.jobttl}' AND responses='${JSON.stringify(userob)}'`;
       //  console.log(qry);
         con.query(qry,(err,data)=>{
             if(err){

@@ -8,7 +8,8 @@ const applyjob = (cpname,cpemail,cpttl,evt)=>{
         body:JSON.stringify({
             pjemail:cpemail,
             pjcpname:cpname,
-            pjttl:cpttl
+            pjttl:cpttl,
+            datetime:Date.now()
         })
     }).then(val=>{return val.json()}).then(valx=>{
        alert(valx.msg);

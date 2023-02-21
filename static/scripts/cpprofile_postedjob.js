@@ -84,7 +84,7 @@ const updateJobs = (obj) => {
               <p class="card-text"><b>Email : </b>${obj.pjemail}</p>
               <p class="card-text"><b>For : </b>${obj.gender}</p>
               <p class="card-text"><b>Salary : </b>${obj.pjsalary}</p>
-              <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+              <p class="card-text"><small class="text-muted">${new Date(Number.parseInt(obj.datetime)).toString()}</small></p>
 
             </div>
             <div class="vr"></div>

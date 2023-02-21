@@ -1,9 +1,3 @@
-// window.onpopstate = (e) => {
-//     if (e) {
-//       window.location = "/signin"
-//     }
-
-//   }
 
 let modelx = document.getElementById("jobDialog");
 let post = document.getElementById("pjpost");
@@ -37,6 +31,7 @@ const postjb = (event) => {
       formData.append(ele.getAttribute("name"), ele.value);
     }
   });
+  formData.append('datetime',Date.now());
   formData.append("pjcpname", document.getElementById("CPNAME").value);
   formData.append("gender", gender);
 
@@ -51,7 +46,6 @@ const postjb = (event) => {
     .then((vax) => {
       $("#jobDialog").modal("hide");
       updateJobs(vax.data);
-     console.log(vax);
       alert(vax.msg);
     })
     .catch((err) => {
@@ -117,7 +111,6 @@ const fetJobs = async () => {
        obj = JSON.stringify(obj);
         
          obj = JSON.parse(obj);
-       //  console.table(obj);
         if (obj.pjttl === undefined) continue;
         else updateJobs(obj);
       }
@@ -134,6 +127,7 @@ const updateJobs = (obj) => {
   job.setAttribute("style","margin-top:5px")
   job.setAttribute("data-email", obj.pjemail);
   job.setAttribute("data-ttl", obj.pjttl);
+  job.setAttribute("data-ext", obj.pjfile.split(".")[1]);
 
   job.innerHTML = `
     <div class="card" style="width: 75%;margine-top:5px;">
@@ -153,6 +147,8 @@ const updateJobs = (obj) => {
     }</span><br>
    <h5 class="card-title" style="display: inline;">salary : </h5> <span class="card-text">${obj.pjsalary
     }</span><br>
+    <p class="card-text"><small class="text-muted">${new Date(Number.parseInt(obj.datetime)).toString()}</small></p>
+    <br>
    <br>
               
               <a href="" class="btn btn-primary mx-3">Edit</a>
@@ -187,17 +183,19 @@ const attachDeleteEvent = () => {
       let parent = evt.target.parentNode.parentNode.parentNode.parentNode;
       data.push(parent.getAttribute("data-email"));
       data.push(parent.getAttribute("data-ttl"));
+      data.push(parent.getAttribute("data-ext"));
       //console.log(parent.getAttribute("data-email"),parent.getAttribute("data-email"));
       let ttl = data[1];
       let eml = data[0];
-
-      deletJob(eml, ttl);
+      let ext = data[2];
+      
+      deletJob(eml, ttl,ext);
       document.querySelectorAll(`[data-ttl="${ttl}"]`)[0].remove();
     });
   });
 };
 
-const deletJob = (email, ttl) => {
+const deletJob = (email, ttl,ext) => {
   fetch("/deletejob", {
     method: "post",
     headers: {
@@ -207,6 +205,7 @@ const deletJob = (email, ttl) => {
     body: JSON.stringify({
       cpemail: `'${email}'`,
       cpttl: `'${ttl}'`,
+      extimg:`'${ext}'`
     }),
   })
     .then((res) => {
