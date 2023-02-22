@@ -1,1 +1,5 @@
 node_modules/*
+public/cpupload/jobmedia/*
+public/cpupload/pp/*
+public/userupload/pp/*
+public/userupload/resume/*

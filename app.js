@@ -96,6 +96,15 @@ app.get("/userprofile/appliedjob", (req, res) => {
   res.status(200).render("userprofile_appliedjob.ejs", { res: obx });
 });
 
+app.get("/userprofile/recievedjob",async(req,res)=>{
+try {
+   const datax = await mysq.recievedjob(JSON.parse(req.session.userData));
+   res.status(201).render('userprofile_recivedjob.ejs',{res:JSON.parse(req.session.userData)});
+} catch (error) {
+  res.status(201).json({msg:'Got Some Error You ☠'});
+}
+});
+
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -254,7 +263,7 @@ app.post("/cpregister", async (req, res) => {
 
 app.get("/cpprofile", (req, res) => {
   let datax = JSON.parse(req.session.cmpny);
-  // console.log(datax);
+// console.log(datax);
   res.status(200).render("cpprofile.ejs", { data: datax });
 });
 
@@ -411,6 +420,25 @@ app.post("/job/:type", async (req, res) => {
         res.status(201).json({ msg: "Job Not Deleted" });
       }
     }
+  }
+  if(req.params['type']==='acceptJob'){
+    try {
+  const data = await    mysq.acceptJob(req.body.cemail,req.body.ttl,req.body.uemail);
+  res.status(201).json({msg:"Accepted ✔"});
+    } catch (error) {
+      res.status(201).json({msg:"Cannot Acept Now Try Again Some Time "});  
+    }
+  }
+  if(req.params['type']==='recievedjob'){
+    console.time("incoming req for recv job usr");
+    try {
+      let data = await mysq.recievedjob(JSON.parse(req.session.userData));
+      res.status(201).json(data);
+    } catch (error) {
+      res.status(201).json({msg:"Got Some Error ☠"});
+    }
+    console.timeEnd("incoming req for recv job usr");
+ 
   }
 });
 

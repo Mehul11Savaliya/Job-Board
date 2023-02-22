@@ -129,7 +129,7 @@ const generateUserCards = (data, jbttl) => {
   </ul>
   <div class="card-footer">
   <a href="#" onclick="preparemodal('${obj.email}')" class="btn btn-info card-link">Message</a>
-  <a href="#" class="btn btn-success card-link">Accept</a>
+  <a href="#" onclick="acceptMessage('${obj.email}','${jbttl}')" class="btn btn-success card-link">Accept</a>
   </div>
 
     </div>
@@ -180,4 +180,21 @@ const closemodal = ()=>{
   document.getElementById("sendMessage").classList.remove("show");
   document.getElementById("sendMessage").setAttribute("style","display:none");
   
+}
+
+function acceptMessage(email,jbttl){
+  let cpemail = document.getElementById('CPEMAIL').value;
+   fetch("/job/acceptJob",{
+    method:"post",
+    headers:{
+      'content-type': 'application/json'
+    },
+    body:JSON.stringify({
+      uemail:email,
+      cemail:cpemail,
+      ttl:jbttl
+    })
+   }).then((resp)=>{return resp.json()}).then((data)=>{
+    alert(data.msg);
+   });
 }

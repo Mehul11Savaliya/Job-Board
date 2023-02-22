@@ -332,7 +332,7 @@ const applyjob = async (cpobj,usrobj,datetime)=>{
         delete usrobj['profile'];
      //   console.table(usrobj);
 
-       const qry=`INSERT INTO jobsx(cpname, jobttl, cpemail,responses,datetime) VALUES ('${cpobj.pjcpname}','${cpobj.pjttl}','${cpobj.pjemail}','${JSON.stringify(usrobj)}','${datetime}')`;
+       const qry=`INSERT INTO jobsx(cpname, jobttl, cpemail,uemail,responses,datetime) VALUES ('${cpobj.pjcpname}','${cpobj.pjttl}','${cpobj.pjemail}','${usrobj.email}','${JSON.stringify(usrobj)}','${datetime}')`;
        // console.log(qry)
     
         con.query(qry,(err,rex)=>{
@@ -450,7 +450,7 @@ const checkAllAppliedJobForUser = async (userob)=>{
 }
 
 const getJobDetails = async (cpname,email,ttl)=>{
-    //console.log(cpname,email,ttl);
+   // console.log(cpname,email,ttl);
     console.time("qry:getJobDetails: ");
     return new Promise(async(res,rej)=>{
         let resx,con,cmpny;
@@ -460,28 +460,29 @@ try {
      resx = await getJobs(email);
      cmpny = await checkCompanyx(email);
     cmpny = cmpny[1];
-   // console.log(cmpny);
+// console.log(cmpny);
+ // console.log(resx);
+ let findobj;
+   
+ for(let o of resx[1]){
+     // o = o.replaceAll('\n','\\n');
+     // o = o.replaceAll('\r','');
+     // o = JSON.parse(o);
+
+     if(o.pjttl==ttl){
+         findobj = o;
+         findobj.pjurl=cmpny[0].url;
+       // console.log(findobj);
+         res([true,findobj]);
+     break;
+     }
+ }
+ console.timeEnd("qry:getJobDetails: ");
 } catch (error) {
     console.log(error);
     rej([false,error]);
 }
 
-// console.log(resx);
-    let findobj;
-   
-    for(let o of resx[1]){
-        // o = o.replaceAll('\n','\\n');
-        // o = o.replaceAll('\r','');
-        // o = JSON.parse(o);
-
-        if(o.pjttl==ttl){
-            findobj = o;
-            findobj.pjurl=cmpny[0].url;
-            res([true,findobj]);
-        break;
-        }
-    }
-    console.timeEnd("qry:getJobDetails: ");
     })
 }
 
@@ -617,9 +618,80 @@ const deleteJobUser = async(obj,userob) =>{
     });
 }
 
+const acceptJob =async (cpemail,jbttl,uemail)=>{
+    return new Promise(async(res,rej)=>{
+        const con = await getConnect();
 
-module.exports = { getConnect, insertRec, deleteRecord, getUser, registerCompany,insertJob,getJobs,deleteJob,getAllJobs,applyjob,checkJobForUser,checkAllAppliedJobForUser,getJobDetails,getApplicantDetails,updateResumeProfilePath,getUserMedia,deleteJobUser};
+        const qry=`UPDATE jobsx SET accepted=true WHERE cpemail='${cpemail}' AND jobttl='${jbttl}' AND uemail='${uemail}'`;
 
+        con.query(qry,(err,data)=>{
+            if(err){
+                rej([false,err]);
+            }
+            else{
+                res([true,data]);
+            }
+        });
+
+        con.end((err)=>{
+            if(err) {
+                console.log("acceptJob : cannot destroy");
+        }
+            else{
+                console.log("deleteJobUser : con destroyed with db ");
+            }  
+         });
+    });
+}
+
+const recievedjob = async (userob)=>{
+    return new Promise(async(res,rej)=>{
+        const con = await getConnect();
+        const qry=`SELECT  cpname,cpemail,jobttl,uemail,datetime FROM jobsx WHERE accepted=true AND uemail ='${userob.email}'`;
+
+        con.query(qry,async(err,data)=>{
+            if(err){
+                rej(err);
+            }
+            else{
+                let jobs =new Array();
+                // data.forEach(async(job) => {
+                //  //   console.table(job);
+                //     let jx = await getJobDetails(job['cpname'],job['cpemail'],job['jobttl']);
+                //     console.log(typeof jx[1],jx);
+                //   //  jobs.push(JSON.stringify(jx[1]));
+                // });
+
+                for(let item of data) {
+                    let jx = await getJobDetails(item['cpname'],item['cpemail'],item['jobttl']);
+                    jobs.push(jx[1]);
+                }
+                
+               
+                res(jobs);
+            }
+        });
+
+        con.end((err)=>{
+            if(err){
+                console.log("recivedjob : canot destroy con",err);
+            }
+        });
+        
+    });
+}
+
+module.exports = { getConnect, insertRec, deleteRecord, getUser, registerCompany,insertJob,getJobs,deleteJob,getAllJobs,applyjob,checkJobForUser,checkAllAppliedJobForUser,getJobDetails,getApplicantDetails,updateResumeProfilePath,getUserMedia,deleteJobUser,acceptJob
+,recievedjob};
+
+
+
+// (
+//     async function(){
+//         const dt = await recievedjob({email:'savaliyamehul95@gmail.com'});
+//        console.log(dt);
+//     }
+// )()
 
 // (async function(){
 

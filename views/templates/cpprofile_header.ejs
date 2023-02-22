@@ -57,22 +57,23 @@
             <a class="nav-link active" aria-current="page" href="/salaryguide">Responses</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="/postresume">Messages</a>
+            <a class="nav-link active" aria-current="page" href="/cpupdateprofile">Update Media</a>
           </li>
         </ul>
 
         <input type="hidden" id="CPNAME" name="CPNAME" value="<%=data.cpname%>">
+        <input type="hidden" id="CPEMAIL" name="CPEMAIL" value="<%=data.cpemail%>">
 
         <li class="nav-item dropdown" style="list-style: none;">
           <a class="navbar-brand dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <img src="/static/img/download.jfif" alt="ProfileImage" width="30" height="24"
+            <img src="<%=data.profile.replace('.','')%>"  onerror="this.src='/static/img/download.jfif'"  alt="ProfileImage" width="30" height="24"
               class="d-inline-block align-text-top">
             <b>
               <%= data.cpname%>
             </b>
           </a>
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Messages!</a></li>
+            <li><a class="dropdown-item" href="/cpchat/<%=data.cpemail%>">Messages!</a></li>
             <li><a class="dropdown-item" href="#">Company Reviews</a></li>
             <li><a class="dropdown-item" href="#">Subscripton</a></li>
             <li><a class="dropdown-item" href="#">Manage Profile</a></li>
