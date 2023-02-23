@@ -521,13 +521,14 @@ const checkCompanyx = async (email) => {
 }
 
 const getApplicantDetails = async (cpname,jbttl,jbemail) =>{
-    // console.log(cpname,jbttl,jbemail)
+     console.log(cpname,jbttl,jbemail)
     console.time("qry : getApplicantDetails");
     return new Promise(async(res,rej)=>{
         try {
             const con = await getConnect();
 
             const qry = `SELECT responses FROM jobsx WHERE cpname='${cpname}' and jobttl = '${jbttl}' and cpemail='${jbemail}'`;
+            console.log(qry);
             con.query(qry,async(err,resx)=>{
                 if(err) {
                     res([false,err]);
@@ -580,6 +581,54 @@ const getApplicantDetails = async (cpname,jbttl,jbemail) =>{
         
        
 });
+}
+
+const getAcceptedApplicatns = async (cpname,jbemail,jbttl)=>{
+    jbttl = jbttl.replaceAll("\'","");
+    jbemail = jbemail.replaceAll("\'","");
+    return new Promise(async(res,rej)=>{
+        const con = await getConnect();
+      const qry = `SELECT responses FROM jobsx WHERE cpname='${cpname}' and jobttl = '${jbttl}' and cpemail='${jbemail}' and accepted=true`;
+      con.query(qry,async(err,resx)=>{
+        if(err) {
+            console.log("err : getAcceptedApplicatns : ",err);
+            rej(err);
+        }
+        else{
+            let appliArray=[],count=0;
+            for (let item of resx) {
+                //item = JSON.parse(item.responses.substring(1,item.responses.length()));
+                // console.log(item);
+                item = JSON.parse(item.responses)//.substring(1,item.responses.length-1);
+               // console.table(item);
+                //item = JSON.parse(item);
+                try{
+                    omedia = await getUserMedia(item.email,item.password);
+                    item['resume'] = omedia[1].resume;
+                    item['profile'] = omedia[1].profile;
+                    }
+                    catch(err){
+                        console.log(err);
+                        item.resume="";
+                        item.profile="./static/img/userprofile.webp";
+                    }
+                item.password = '';
+                count++;
+                appliArray.push(item);
+            }
+            let obj ={};
+            obj.count = count;
+            obj.application = appliArray;
+       //   console.log(obj);
+          res([true,obj]);
+        }});
+        con.end((err)=>{
+            if(err) {
+                console.log("getAcceptedApplicatns : cannot destroy");
+        }                 
+         });      
+  
+    });
 }
 
 const deleteJobUser = async(obj,userob) =>{
@@ -682,9 +731,15 @@ const recievedjob = async (userob)=>{
 }
 
 module.exports = { getConnect, insertRec, deleteRecord, getUser, registerCompany,insertJob,getJobs,deleteJob,getAllJobs,applyjob,checkJobForUser,checkAllAppliedJobForUser,getJobDetails,getApplicantDetails,updateResumeProfilePath,getUserMedia,deleteJobUser,acceptJob
-,recievedjob};
+,recievedjob,getAcceptedApplicatns};
 
 
+// (
+//     async function (){
+//         const data = await getAcceptedApplicatns('MS Corp','Software Engineer','svlmehul@gmail.com');
+//         console.log(data);
+//     }
+// )()
 
 // (
 //     async function(){

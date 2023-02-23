@@ -1,0 +1,81 @@
+<%- include("./templates/cpprofile_header.ejs") -%>
+
+<input type="hidden" name="applidta" id="applidta" value='<%-JSON.stringify(apldata)-%>'/>
+
+    <div class="container" style="min-height: 67vh;">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">First Name</th>
+                  <th scope="col">Last Name</th>
+                  <th scope="col">Address</th>
+                  <th scope="col">email</th>
+                  <th scope="col">phone</th>
+                  <th scope="col">resume</th>
+                  <th scope="col">InterView</th>
+                </tr>
+              </thead>
+              <tbody id="applidtaxx">
+                <!-- <tr>
+                  <th scope="row">1</th>
+                  <td>Mark</td>
+                  <td>Otto</td>
+                  <td>@mdo</td>
+                  <td>Mark</td>
+                  <td>Otto</td>
+                  <td>@mdo</td>
+                </tr> -->
+                </tbody>
+          </table>
+    </div>
+
+    <!-- InterView Schedule Model -->
+<div class="modal fade" style="display: none;" id="schedule_interview_model" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="headmsg">Schedule For : </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModel()"></button>
+      </div>
+      <div class="modal-body" style="max-height: 60vh; overflow-y: scroll;">
+        <form action="/job/setInterview" id="setInter" onsubmit='postInterview(event)' method="post">
+        <label for="location" class="form-label">Location</label>
+        <textarea id="location" name="location" class="form-control form-control-sm" placeholder="ex Googl Map Location..." type="text"></textarea>
+       
+        <label for="documents" class="form-label">Required Documents</label>
+        <input id="documents" name="reqrdocs" class="form-control form-control-sm" type="text">
+       
+        <label for="hr" class="form-label">HR</label>
+        <input id="hr" name="hrname" class="form-control form-control-sm" type="text">
+       
+        <label for="hrcontacts" class="form-label">HR Contacts</label>
+    
+        <div id="hrcontacts" class="input-group mb-3">
+          <input type="email" name="hrcontacts-email"  class="form-control" placeholder="Email" aria-label="Username">
+          <span class="input-group-text">|</span>
+          <input type="text" name="hrcontacts-phone" class="form-control" placeholder="Phone" aria-label="Server">
+        </div>
+
+        <label for="date" class="form-label">Date</label>
+        <input type="date" name="date" class="form-control form-control-sm" name="date" id="date">
+       
+        <label for="date" class="form-label">Time</label>
+        <input type="time" name="time" class="form-control form-control-sm" name="date" id="date">
+
+        <label for="extradetail" class="form-label">Extra Details</label>
+        <textarea id="extradetail" name="extradetail" class="form-control form-control-sm" placeholder="..." type="text"></textarea>
+       
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModel()" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Go!</button>
+      </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <script src="/static/scripts/cp_schedule.js"></script>
+
+<%- include("./templates/cpprofile_footer.ejs") -%>

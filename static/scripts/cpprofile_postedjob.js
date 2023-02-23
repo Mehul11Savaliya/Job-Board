@@ -96,7 +96,7 @@ const updateJobs = (obj) => {
                 <a href="${obj.pjposter}" class="btn mx-2 btn-outline-success">See</a>
               </p>
               <span><button class="btn btn-outline-info" onclick="getApplicant('${obj.pjttl}','${obj.pjemail}',event)">Details</button></span>
-              
+              <span><a class="btn btn-outline-info" href="/job/schedule?jobttl='${obj.pjttl}&jobemail='${obj.pjemail}'">Scedules</a></span>
             </div>
           </div>
             

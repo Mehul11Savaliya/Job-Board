@@ -385,6 +385,18 @@ app.get("/job/:type", async (req, res) => {
    // console.log(result);
     res.status(201).send(result[1]);
   }
+  if(req.params['type']==='schedule'){
+    if(req.session.cmpny===undefined){
+      res.status(201).send('<h1>u dont hab permisson sir 🤡</h1>');
+    }
+    else{
+      let cp = JSON.parse(req.session.cmpny);
+      console.log(req.query);
+      const adta = await mysq.getAcceptedApplicatns(cp.cpname,req.query.jobemail,req.query.jobttl);
+      res.status(201).render('cp_schedule.ejs',{data:cp,apldata:adta[1]});
+    // res.status(201).json({data:JSON.parse(req.session.cmpny)});
+  }
+  }
 });
 
 app.post("/job/:type", async (req, res) => {
