@@ -1,5 +1,11 @@
 <%- include("./templates/cpprofile_header.ejs") -%>
 
+<style>
+  .hide{
+    visibility: hidden;
+  }
+</style>
+
 <input type="hidden" name="applidta" id="applidta" value='<%-JSON.stringify(apldata)-%>'/>
 
     <div class="container" style="min-height: 67vh;">
@@ -28,6 +34,10 @@
                 </tr> -->
                 </tbody>
           </table>
+          <!-- loader -->
+      <img id="intrwloader" style="position: relative;top:50%;left: 50%;" class="hide" height="100px" width="100px" src="/static/gif/interview_schedule.gif" alt="" srcset="">
+
+
     </div>
 
     <!-- InterView Schedule Model -->
@@ -39,7 +49,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModel()"></button>
       </div>
       <div class="modal-body" style="max-height: 60vh; overflow-y: scroll;">
-        <form action="/job/setInterview" id="setInter" onsubmit='postInterview(event)' method="post">
+        <form id="setInter" onsubmit='postInterview(event)'>
         <label for="location" class="form-label">Location</label>
         <textarea id="location" name="location" class="form-control form-control-sm" placeholder="ex Googl Map Location..." type="text"></textarea>
        
@@ -74,6 +84,7 @@
       </div>
     </div>
   </div>
+
 </div>
 
     <script src="/static/scripts/cp_schedule.js"></script>

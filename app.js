@@ -6,6 +6,8 @@ const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const bodyparser = require("body-parser");
 const formidable = require("formidable");
+const CryptoJs = require("crypto-js");
+
 
 const mysq = require("./src/mysq.js");
 const auth = require("./src/authenticate.js");
@@ -96,13 +98,13 @@ app.get("/userprofile/appliedjob", (req, res) => {
   res.status(200).render("userprofile_appliedjob.ejs", { res: obx });
 });
 
-app.get("/userprofile/recievedjob",async(req,res)=>{
-try {
-   const datax = await mysq.recievedjob(JSON.parse(req.session.userData));
-   res.status(201).render('userprofile_recivedjob.ejs',{res:JSON.parse(req.session.userData)});
-} catch (error) {
-  res.status(201).json({msg:'Got Some Error You ☠'});
-}
+app.get("/userprofile/recievedjob", async (req, res) => {
+  try {
+    const datax = await mysq.recievedjob(JSON.parse(req.session.userData));
+    res.status(201).render('userprofile_recivedjob.ejs', { res: JSON.parse(req.session.userData) });
+  } catch (error) {
+    res.status(201).json({ msg: 'Got Some Error You ☠' });
+  }
 });
 
 app.get("/logout", (req, res) => {
@@ -126,7 +128,7 @@ app.post("/register", async (req, res) => {
   obj.active = true;
   obj.password = req.body.regpass;
   obj.profile = "./static/img/userprofile.webp";
-  // console.log(req.body);
+
   const resx = await auth.checkUser(obj.email);
 
   if (resx) {
@@ -142,8 +144,14 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.get("/test", (req, res) => {
-  res.sendFile(path.join(__dirname, "/template/test.html"));
+app.get("/test", async (req, res) => {
+  const data = await mysq.getAllJobs();
+  // res.status(201).json({
+  //   test :'echo1'
+
+  // });
+  res.status(200).json(data);
+  // res.sendFile(path.join(__dirname, "/template/test.html"));
 });
 app.post("/test", (req, res) => {
   const form = new formidable.IncomingForm();
@@ -263,7 +271,7 @@ app.post("/cpregister", async (req, res) => {
 
 app.get("/cpprofile", (req, res) => {
   let datax = JSON.parse(req.session.cmpny);
-// console.log(datax);
+  // console.log(datax);
   res.status(200).render("cpprofile.ejs", { data: datax });
 });
 
@@ -294,10 +302,10 @@ app.post("/setjob", async (req, res) => {
       const result = await mysq.insertJob(obj, fields, paths[0], paths[1],
         fields.datetime);
       fields.pjposter = paths[1];
-      fields.pjfile=paths[0];
+      fields.pjfile = paths[0];
       res.status(201).json({
-        msg:'Job Posted!✔',
-        data:fields
+        msg: 'Job Posted!✔',
+        data: fields
       });
     } catch (error) {
       console.log(error);
@@ -334,17 +342,17 @@ app.post("/getJobs", async (req, res) => {
 });
 
 app.post("/deletejob", async (req, res) => {
- 
+
   try {
-  const resx = await mysq.deleteJob(
-    req.body.cpemail.replaceAll("'", ""),
-    req.body.cpttl.replaceAll("'", ""),
-    JSON.parse(req.session.cmpny).cpname
-  );
-  media.deleteJobMedia(req.body.cpemail.replaceAll("'", ""),
-  req.body.cpttl.replaceAll("'", ""),
-  req.body.extimg.replaceAll("'", ""));
-  res.status(201).json({ msg: resx[1] }); 
+    const resx = await mysq.deleteJob(
+      req.body.cpemail.replaceAll("'", ""),
+      req.body.cpttl.replaceAll("'", ""),
+      JSON.parse(req.session.cmpny).cpname
+    );
+    media.deleteJobMedia(req.body.cpemail.replaceAll("'", ""),
+      req.body.cpttl.replaceAll("'", ""),
+      req.body.extimg.replaceAll("'", ""));
+    res.status(201).json({ msg: resx[1] });
   } catch (error) {
     console.log(error);
   }
@@ -363,7 +371,7 @@ app.post("/appyJob", async (req, res) => {
     if (validjob[0]) {
       res.status(201).json({ msg: "Already Applied" });
     } else {
-      const resx = await mysq.applyjob(req.body, jobseeker,req.body.datetime);
+      const resx = await mysq.applyjob(req.body, jobseeker, req.body.datetime);
       res.status(201).json({
         msg: `"Applied Successfully! You Will Reciev Mail From : ${req.body.pjemail}"`,
       });
@@ -378,24 +386,62 @@ app.get("/cpprofile/postedjob", (req, res) => {
   res.status(201).render("cpprofile_postedjob.ejs", { data: obx });
 });
 
+app.get("/cpprofile/:type", async (req, res) => {
+  if (req.params['type'] === 'schedules') {
+    try {
+      let cpn = JSON.parse(req.session.cmpny);
+      //   let jbs = await mysq.getJobs(cpn.cpemail);
+      //   jbs = jbs[1];
+      //   let jbarray = [];
+      //  for(let val of jbs) {
+      //   jbarray.push(val.pjttl);
+      //  }
+
+      //  let applicas = [];
+      //   for(let ttls of jbarray) {
+
+      //   const adta = await mysq.getAcceptedApplicatns(cpn.cpname,cpn.cpemail,ttls);
+      //     adta[1].ttl = ttls;
+      //   applicas.push(adta[1]);
+      //   }
+
+
+      let applic = await mysq.getSchedules(cpn);
+      console.log(applic);
+
+      // res.status(200).render('schedules.ejs',{data:cpn,apps:applic});
+      res.status(201).json(applic);
+    } catch (error) {
+      console.log(error);
+      res.status(200).send("<h1>Login First! sir🐦</h1>");
+    }
+    // if(cpn===undefined){
+    //     res.status(200).send("<h1>Login First! sir🐦</h1>");
+    // }
+    // else{
+    //   res.status(201).json(cpn);
+    // }
+  }
+});
+
 //job related
 app.get("/job/:type", async (req, res) => {
   if (req.params["type"] === "getAppliedJobs") {
     const result = await mysq.checkAllAppliedJobForUser(JSON.parse(req.session.userData));
-   // console.log(result);
+    // console.log(result);
     res.status(201).send(result[1]);
   }
-  if(req.params['type']==='schedule'){
-    if(req.session.cmpny===undefined){
+  if (req.params['type'] === 'schedule') {
+    if (req.session.cmpny === undefined) {
       res.status(201).send('<h1>u dont hab permisson sir 🤡</h1>');
     }
-    else{
+    else {
       let cp = JSON.parse(req.session.cmpny);
-      console.log(req.query);
-      const adta = await mysq.getAcceptedApplicatns(cp.cpname,req.query.jobemail,req.query.jobttl);
-      res.status(201).render('cp_schedule.ejs',{data:cp,apldata:adta[1]});
-    // res.status(201).json({data:JSON.parse(req.session.cmpny)});
-  }
+      //  console.log(req.query);
+      const adta = await mysq.getAcceptedApplicatns(cp.cpname, req.query.jobemail, req.query.jobttl);
+      res.status(201).render('cp_schedule.ejs', { data: cp, apldata: adta[1] });
+      // res.status(201).json({data:JSON.parse(req.session.cmpny)});
+    }
   }
 });
 
@@ -433,24 +479,40 @@ app.post("/job/:type", async (req, res) => {
       }
     }
   }
-  if(req.params['type']==='acceptJob'){
+  if (req.params['type'] === 'acceptJob') {
     try {
-  const data = await    mysq.acceptJob(req.body.cemail,req.body.ttl,req.body.uemail);
-  res.status(201).json({msg:"Accepted ✔"});
+      const data = await mysq.acceptJob(req.body.cemail, req.body.ttl, req.body.uemail);
+      res.status(201).json({ msg: "Accepted ✔" });
     } catch (error) {
-      res.status(201).json({msg:"Cannot Acept Now Try Again Some Time "});  
+      res.status(201).json({ msg: "Cannot Acept Now Try Again Some Time " });
     }
   }
-  if(req.params['type']==='recievedjob'){
+  if (req.params['type'] === 'recievedjob') {
     console.time("incoming req for recv job usr");
     try {
       let data = await mysq.recievedjob(JSON.parse(req.session.userData));
       res.status(201).json(data);
     } catch (error) {
-      res.status(201).json({msg:"Got Some Error ☠"});
+      res.status(201).json({ msg: "Got Some Error ☠" });
     }
     console.timeEnd("incoming req for recv job usr");
- 
+
+  }
+  if (req.params['type'] === 'setInterview') {
+    let cmpn = JSON.parse(req.session.cmpny);
+    if (cmpn === undefined) {
+      res.status(201).json({ msg: "Login First🤡" });
+    }
+    else {
+      try {
+        // console.log(req,req.body);
+        const data = await mysq.scheduleInterview(cmpn, req.body);
+        res.status(201).json({ msg: "Interview Scheduled!" });
+      } catch (error) {
+        console.log("err : app>job/scheduleinterview", error);
+        res.status(201).json({ err: `Error 🐦:${error.message}` });
+      }
+    }
   }
 });
 
@@ -637,7 +699,7 @@ app.post("/chat/:bhot", async (req, res) => {
     try {
       let user = JSON.parse(req.session.userData);
       const tos = await chat.getTos(user.email);
-     //  console.log(tos);
+      //  console.log(tos);
       res.status(201).json(tos[1]);
     } catch (error) {
       res.status(201).send(error[1]);
@@ -660,7 +722,7 @@ app.get("/cpchat/:id", async (req, res) => {
   let tos = {};
   // let to = await chat.getTos(datax.cpemail);
   // console.log(to);
-  
+
   // to = to[1];
   //  console.log("noob",to);
   res.render("cpchats.ejs", { data: datax });
@@ -682,7 +744,7 @@ app.post("/cpchat/:bhot", async (req, res) => {
     try {
       let user = JSON.parse(req.session.cmpny);
       const tos = await chat.getTos(user.cpemail);
-   //  console.log("noob",tos);
+      //  console.log("noob",tos);
       res.status(201).json(tos[1]);
     } catch (error) {
       res.status(201).send(error[1]);
@@ -698,6 +760,475 @@ app.post("/cpchat/:bhot", async (req, res) => {
       res.status(201).send(msgs[1]);
     }
   }
+});
+
+app.post("/api/:what", async (req, res) => {
+  if (req.params['what'] === "uregister") {
+    let obj = {};
+    obj.fname = req.body.regfname;
+    obj.lname = req.body.reglname;
+    obj.email = req.body.regemail;
+    obj.phone = req.body.regphone;
+    obj.active = true;
+    obj.password = req.body.regpass;
+    obj.profile = "./static/img/userprofile.webp";
+
+  //  console.log(obj);
+
+    const resx = await auth.checkUser(obj.email);
+
+    if (resx) {
+      //user exist
+      const resp = {};
+      resp.exist = "Can not Create Accout User Alredy Exist!";
+      res.status(200).json(resx);
+    } else {
+      const insrtflag = await mysq.insertRec(obj);
+      console.log(insrtflag);
+      req.session.userDatareg = obj;
+      req.session.save();
+      res.status(200).json(obj);
+    }
+  }
+  if (req.params['what'] === 'cpregister') {
+    try {
+      const exist = await auth.checkCompany(req.body.cpemail);
+      // console.log(exist,req.body.cpemail);
+      if (exist[0]) {
+        let datax = {};
+        datax.err = "Company Already Registered!";
+        res.status(201).json(exist[0]);
+      } else {
+        const rs = await mysq.registerCompany(req.body);
+        if (rs[0]) {
+          req.session.cmpny = JSON.stringify(req.body);
+          req.session.save();
+          res.status(201).json(req.session.cmpny);
+        } else {
+          res.status(500).end("We are Facing Some Issue");
+        }
+      }
+    } catch (e) {
+      res.status(500).end("We are Facing Some Issue");
+      console.log(e);
+    }
+  }
+  if (req.params['what'] === 'accept') {
+    try {
+      const us = await auth.getUserx(
+        req.body["sign-email"],
+        req.body["sign-pass"]
+      );
+      const cp = await auth.getCompany(
+        req.body["sign-email"],
+        req.body["sign-pass"]
+      );
+
+      //console.log(us);
+      // console.log(cp);
+
+      if (us[0] !== undefined) {
+        console.log("user");
+        let o = us[0];
+        // console.log(o);
+        let obj = {};
+        obj.fname = o.firstname;
+        obj.lname = o.lastname;
+        obj.email = o.email;
+        obj.phone = o.phone;
+        obj.password = o.password;
+
+        let omedia;
+        try {
+          omedia = await mysq.getUserMedia(obj.email, obj.password);
+          obj.resume = omedia[1].resume;
+          obj.profile = omedia[1].profile;
+        } catch (err) {
+          console.log(err);
+          obj.resume = "";
+          obj.profile = "./static/img/userprofile.webp";
+        }
+        //    console.log(obj);
+        // req.session.userData = JSON.stringify(obj);
+        // req.session.save();
+        res.status(201).json(obj);
+      }
+      else if (cp[1][0] !== undefined) {
+        console.log("company");
+        cp[1] = cp[1][0];
+        let obj = {};
+        obj.cpfname = cp[1].fname;
+        obj.cplname = cp[1].lname;
+        obj.cpname = cp[1].name;
+        obj.cpurl = cp[1].url;
+        obj.cpaddr = cp[1].addr;
+        obj.cpsize = cp[1].size;
+        obj.cpemail = cp[1].email;
+        obj.cpphone = cp[1].phone;
+        obj.cppass = cp[1].pass;
+        obj.cpactive = cp[1].active;
+        obj.cpjobs = cp[1].jobs;
+        obj.cpcanjobs = cp[1].canjobs;
+        obj.cpreview = cp[1].review;
+
+        const prof = await media.getCompanyMedia(obj.cpemail, obj.cppass);
+
+        if (prof[1][0] === undefined) {
+          obj.profile = "./static/img/userprofile.jpg";
+        } else {
+          obj.profile = prof[1][0].profile;
+        }
+        // req.session.cmpny = JSON.stringify(obj);
+        // req.session.save();
+
+        res.status(201).json(obj);
+      } else {
+        res
+          .status(200)
+          .json({ msg: 'Invalid Id Pass 🐦' });
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  if (req.params['what'] === 'getAllJobs') {
+    const data = await mysq.getAllJobs();
+    //console.log(data);
+    res.status(200).json(data);
+  }
+  if (req.params['what'] === 'applyJob') {
+    try {
+
+
+      let jobseeker = await auth.getUserx(
+        req.body.uemail,
+        req.body.upass
+      );
+
+      jobseeker = jobseeker[0];
+      //  console.log(jobseeker,req.body);
+
+
+
+      let jobseekernew = {};
+      jobseekernew.fname = jobseeker.firstname;
+      jobseekernew.lname = jobseeker.lastname;
+      jobseekernew.email = jobseeker.email;
+      jobseekernew.phone = jobseeker.phone;
+      jobseekernew.password = jobseeker.password;
+
+      let omedia;
+      try {
+        omedia = await mysq.getUserMedia(jobseekernew.email, jobseekernew.password);
+        jobseekernew.resume = omedia[1].resume;
+        jobseekernew.profile = omedia[1].profile;
+      } catch (err) {
+        console.log(err);
+        jobseekernew.resume = "";
+        jobseekernew.profile = "./static/img/userprofile.webp";
+      }
+
+
+      const validjob = await mysq.checkJobForUser(req.body, jobseekernew);
+      if (validjob[0]) {
+        res.status(201).json({ msg: "Already Applied" });
+      } else {
+        const resx = await mysq.applyjob(req.body, jobseekernew, req.body.datetime);
+        res.status(201).json({
+          msg: `"Applied Successfully! You Will Reciev Mail From : ${req.body.pjemail}"`,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  if (req.params['what'] === 'getAppliedJob') {
+    // console.log(req.body);
+    let jobseeker = await auth.getUserx(
+      req.body.uemail,
+      req.body.upass
+    );
+
+    jobseeker = jobseeker[0];
+
+    let jobseekernew = {};
+    jobseekernew.fname = jobseeker.firstname;
+    jobseekernew.lname = jobseeker.lastname;
+    jobseekernew.email = jobseeker.email;
+    jobseekernew.phone = jobseeker.phone;
+    jobseekernew.password = jobseeker.password;
+
+    let omedia;
+    try {
+      omedia = await mysq.getUserMedia(jobseekernew.email, jobseekernew.password);
+      jobseekernew.resume = omedia[1].resume;
+      jobseekernew.profile = omedia[1].profile;
+    } catch (err) {
+      console.log(err);
+      jobseekernew.resume = "";
+      jobseekernew.profile = "./static/img/userprofile.webp";
+    }
+
+    const result = await mysq.checkAllAppliedJobForUser(jobseekernew);
+    //   console.log(result);
+    res.status(201).send(result[1]);
+  }
+  if (req.params['what'] === 'deleteJobUser') {
+    if (req.body === undefined) {
+      res.status(201).json({ msg: "Job Not Deleted" });
+      console.log("req body part");
+    } else {
+
+      let jobseeker = await auth.getUserx(
+        req.body.uemail,
+        req.body.upass
+      );
+
+      jobseeker = jobseeker[0];
+
+      let jobseekernew = {};
+      jobseekernew.fname = jobseeker.firstname;
+      jobseekernew.lname = jobseeker.lastname;
+      jobseekernew.email = jobseeker.email;
+      jobseekernew.phone = jobseeker.phone;
+      jobseekernew.password = jobseeker.password;
+
+      let omedia;
+      try {
+        omedia = await mysq.getUserMedia(jobseekernew.email, jobseekernew.password);
+        jobseekernew.resume = omedia[1].resume;
+        jobseekernew.profile = omedia[1].profile;
+      } catch (err) {
+        console.log(err);
+        jobseekernew.resume = "";
+        jobseekernew.profile = "./static/img/userprofile.webp";
+      }
+
+      const resx = await mysq.deleteJobUser(
+        req.body,
+        jobseekernew
+      );
+      if (resx[0]) {
+        res.status(201).json({ msg: "Job Removed(☞ﾟヮﾟ)☞!" });
+        console.log("else 1");
+      } else {
+        console.log("else 2");
+        res.status(201).json({ msg: "Job Not Deleted" });
+      }
+    }
+  }
+  if (req.params['what'] === 'receivedJobUser') {
+    try {
+
+      let jobseeker = await auth.getUserx(
+        req.body.uemail,
+        req.body.upass
+      );
+
+      jobseeker = jobseeker[0];
+
+      let jobseekernew = {};
+      jobseekernew.fname = jobseeker.firstname;
+      jobseekernew.lname = jobseeker.lastname;
+      jobseekernew.email = jobseeker.email;
+      jobseekernew.phone = jobseeker.phone;
+      jobseekernew.password = jobseeker.password;
+
+      let omedia;
+      try {
+        omedia = await mysq.getUserMedia(jobseekernew.email, jobseekernew.password);
+        jobseekernew.resume = omedia[1].resume;
+        jobseekernew.profile = omedia[1].profile;
+      } catch (err) {
+        console.log(err);
+        jobseekernew.resume = "";
+        jobseekernew.profile = "./static/img/userprofile.webp";
+      }
+
+
+      let data = await mysq.recievedjob(jobseekernew);
+      res.status(201).json(data);
+    } catch (error) {
+      res.status(201).json({ msg: "Got Some Error ☠", error: error.message });
+    }
+  }
+  if (req.params['what'] === 'getPostedJobs') {
+  //  console.log(req.body);
+    const cp = await auth.getCompany(
+      req.body.cpemail,
+      req.body.cppass
+    );
+
+    let obj = {};
+
+    cp[1] = cp[1][0];
+    if (cp[1] === undefined) {
+    }
+    else {
+      obj.cpfname = cp[1].fname;
+      obj.cplname = cp[1].lname;
+      obj.cpname = cp[1].name;
+      obj.cpurl = cp[1].url;
+      obj.cpaddr = cp[1].addr;
+      obj.cpsize = cp[1].size;
+      obj.cpemail = cp[1].email;
+      obj.cpphone = cp[1].phone;
+      obj.cppass = cp[1].pass;
+      obj.cpactive = cp[1].active;
+      obj.cpjobs = cp[1].jobs;
+      obj.cpcanjobs = cp[1].canjobs;
+      obj.cpreview = cp[1].review;
+
+      const prof = await media.getCompanyMedia(obj.cpemail, obj.cppass);
+      if (prof[1][0] === undefined) {
+        obj.profile = "./static/img/userprofile.jpg";
+      } else {
+        obj.profile = prof[1][0].profile;
+      }
+
+      const resx = await mysq.getJobs(obj.cpemail);
+
+     res.status(201).json(resx[1]);
+  }
+}
+  if(req.params['what']==='deleteJob'){
+    
+  try {
+   // console.table(req.body);
+    const resx = await mysq.deleteJob(
+      req.body.cpemail.replaceAll("'", ""),
+      req.body.cpttl.replaceAll("'", ""),
+      req.body.cpname
+    );
+    media.deleteJobMedia(req.body.cpemail.replaceAll("'", ""),
+      req.body.cpttl.replaceAll("'", ""),
+      req.body.extimg.replaceAll("'", ""));
+    res.status(201).json({ msg: resx[1] });
+   
+  } catch (error) {
+    res.status(201).json({ msg:'try again later' });
+    console.log(error);
+  }
+  }
+
+  if(req.params['what']==='getApplicants'){
+    let da = req.body;
+    try {
+      const data = await mysq.getApplicantDetails(
+        da.cpname,
+        da.cpttl,
+        da.cpemail
+      );
+      res.status(201).json(data);
+    } catch (error) {
+      res.status(201).json({
+        msg:'can retrive info 🐦 '
+      });
+      console.log(error);
+    }
+    
+  }
+
+});
+
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './public/cpupload/jobmedia')
+  },
+  filename: function (req, file, cb) {
+    let obj = JSON.parse(req.body.data);
+
+    let hs = CryptoJs.SHA1(obj.pjemail + obj.pjttl);
+    let hex = hs.toString();
+    ext1 = file.originalname.split('.')[1];
+    let name = hex + "." + ext1;
+
+    file.originalname = name;
+    cb(null, file.originalname)
+  }
+});
+const upload = multer({ storage: storage, limits: { fileSize: 100000000 } });
+
+app.post('/tesxt', upload.fields([{ name: 'file1', maxCount: 1 }, { name: 'file2', maxCount: 1 }]), async function (req, res, next) {
+
+  try {
+    let obj2 = JSON.parse(req.body.data);
+   
+    const cp = await auth.getCompany(
+      obj2['sign-email'],
+      obj2['sign-pass']
+    );
+
+   
+
+    let obj = {};
+
+    cp[1] = cp[1][0];
+    if (cp[1] === undefined) {
+    }
+    else {
+      obj.cpfname = cp[1].fname;
+      obj.cplname = cp[1].lname;
+      obj.cpname = cp[1].name;
+      obj.cpurl = cp[1].url;
+      obj.cpaddr = cp[1].addr;
+      obj.cpsize = cp[1].size;
+      obj.cpemail = cp[1].email;
+      obj.cpphone = cp[1].phone;
+      obj.cppass = cp[1].pass;
+      obj.cpactive = cp[1].active;
+      obj.cpjobs = cp[1].jobs;
+      obj.cpcanjobs = cp[1].canjobs;
+      obj.cpreview = cp[1].review;
+
+      const prof = await media.getCompanyMedia(obj.cpemail, obj.cppass);
+      if (prof[1][0] === undefined) {
+        obj.profile = "./static/img/userprofile.jpg";
+      } else {
+        obj.profile = prof[1][0].profile;
+      }
+
+
+
+      let hs = CryptoJs.SHA1(obj2.pjemail + obj2.pjttl);
+      let hex = hs.toString();
+
+      ext1 = obj2.pjposter.split('.')[1];
+      let pjpostername = hex + "." + ext1;
+      ext2 = obj2.pjfile.split('.')[1];
+      let pjfilename = hex + "." + ext2;
+
+      let pathx = "/public/cpupload/jobmedia/";
+
+
+      delete obj2['CPNAME'];
+      delete obj2['sign-email'];
+      delete obj2['sign-pass'];
+      delete obj2['pjfile'];
+      delete obj2['pjposter'];
+
+      const result = await mysq.insertJob(obj, obj2,pathx+pjpostername,pathx+pjfilename , Date.now());
+
+      obj2.pjposter = pathx + pjpostername;
+      obj2.pjfile = pathx + pjfilename;
+
+      res.status(201).json({
+        msg: 'Job Posted!✔',
+        data: obj2
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(201).json({ msg: "Job Not Posted." });
+  }
+});
+
+
+const fileserver = express();
+fileserver.use("/public", express.static(path.join(__dirname, "/public")));
+fileserver.listen(80, () => {
+  console.log(`file server started at : http://${host}:${80}`);
 });
 
 app.listen(port, () => {

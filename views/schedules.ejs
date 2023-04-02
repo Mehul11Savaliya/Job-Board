@@ -1,0 +1,47 @@
+<%- include("./templates/cpprofile_header.ejs") -%>
+
+<div class="container-fluid" style="height: 90vh;">
+    <table class="table">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">First Name</th>
+                <th scope="col">Last Name</th>
+                <th scope="col">Date :: Time</th>
+                <th scope="col">Details</th>
+              </tr>
+        </thead>
+        <tbody>
+
+              <% for(const item of apps){ %>
+                <tr>
+                    <th colspan="5" class="table-secondary" style="text-align: center;"><%= item.ttl+'('+item.count+')'%></th>
+                    <% let i =0;%>
+                 <%   for (const aps of item.application) { %>
+                    <tr>
+                        <th scope="col"  ><%=++i%>
+                            <img src="<%=aps.profile.replace('.','')%>" onerror="this.src='/static/img/userprofile.webp'"  alt="ProfileImage" width="30" height="24"
+                            class="d-inline-block align-text-top" >
+                        </th>
+                    <td ><%= aps.fname%></td>
+                    <td ><%= aps.lname%></td>
+                    <td >0</td>
+                    <td ></td>
+                </tr>
+                   <%}%>
+                </tr>
+                <%}%>
+          <tr>
+
+          <!-- <tr>
+            <td scope="row">1</td>
+            <td>aa</td>
+            <td>bb</td>
+            <td>cc</td>
+            <td>dd</td>
+          </tr> -->
+        </tbody>
+      </table>
+</div>
+
+<%- include("./templates/cpprofile_footer.ejs")-%>

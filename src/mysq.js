@@ -2,7 +2,6 @@ const mysql = require("mysql");
 const path = require("path");
 const fs = require("fs");
 const { type } = require("os");
-
 const getConnect = async () => {
     return await new Promise((res, rej) => {
     let con = mysql.createConnection({
@@ -289,17 +288,20 @@ const getAllJobs = async()=>{
     console.time("qry:getAllJob : ")
     return new Promise(async(res,rej)=>{
         const con = await getConnect();
-        const qry = `SELECT job,file,pstr FROM postedjobs`;
+        const qry = `SELECT job,file,pstr,datetime FROM postedjobs`;
         con.query(qry,(err,data)=>{
             if(err) rej([false,err]);
             else{
                 let arr = [];
              Array.from(data).forEach((val)=>{
                 let obj = val.job;
+              
+              
+              //  console.table(obj);
                  obj = obj.replaceAll('\n','\\n');
                 obj = obj.replaceAll('\r','');
                  obj = JSON.parse(obj);
-                
+                 obj.datetime = val.datetime;
                      obj.pjfile = val.file;
                      obj.pjposter=val.pstr;
                     arr.push(obj);
@@ -318,6 +320,7 @@ const getAllJobs = async()=>{
 }
 
 const applyjob = async (cpobj,usrobj,datetime)=>{
+    datetime = Date.now();
     return new Promise(async(res,rej)=>{
       try {
         console.time("applyjobqry")
@@ -325,8 +328,13 @@ const applyjob = async (cpobj,usrobj,datetime)=>{
         let data="{}|";
         const fqry = `SELECT responses FROM jobsx WHERE cpname='${cpobj.pjcpname}' AND cpemail ='${cpobj.pjemail}' AND jobttl='${cpobj.pjttl}'`;
 
+        try {
+            usrobj = JSON.parse(usrobj);
+            
+        } catch (error) {
+         usrobj = usrobj;     
+        }
  
-        usrobj = JSON.parse(usrobj);
        // console.table(usrobj);
         delete usrobj['resume'];
         delete usrobj['profile'];
@@ -368,7 +376,12 @@ const checkJobForUser = async (cpjobobj,userob)=>{
                 if(err) rej([false,err]);
                else {
              //   console.table(cpjobobj);
+             try {
                 userob = JSON.parse(userob);
+                
+             } catch (error) {
+              userob = userob;  
+             }
               //  console.table(userob);                    
               
                 let objs = resx;
@@ -730,152 +743,106 @@ const recievedjob = async (userob)=>{
     });
 }
 
-module.exports = { getConnect, insertRec, deleteRecord, getUser, registerCompany,insertJob,getJobs,deleteJob,getAllJobs,applyjob,checkJobForUser,checkAllAppliedJobForUser,getJobDetails,getApplicantDetails,updateResumeProfilePath,getUserMedia,deleteJobUser,acceptJob
-,recievedjob,getAcceptedApplicatns};
+const scheduleInterview =  (cmpobj,uobj)=>{
+    return new Promise(async(res,rej)=>{
+        const con = await getConnect();
+
+        // console.log(cmpobj,uobj);
+        const qry = `INSERT INTO interview(jsemail,jsphone, ttl,cpemail, cpphone, location,hr, hr_email, hr_phone, date, time, extradetails,req_doc)
+     VALUES ('${uobj.email}','${uobj.phone}',${uobj.ttl}','${cmpobj.cpemail}','${cmpobj.cpphone}','${uobj.location}','${uobj.hrname}','${uobj['hrcontacts-email']}','${uobj['hrcontacts-phone']}','${uobj.date}','${uobj.time}','${uobj.extradetail}','${uobj.reqrdocs}')`;
+
+        con.query(qry,(err,resx)=>{
+            if(err){
+                console.log("err : mysql>scheduleInterview",err);
+                rej(err);
+            }
+            else{
+                    res([true,resx]);
+            }
+        });
+
+        con.end((err)=>{
+            if(err){
+                console.log("err : mysq>scheduleInterview",err);
+            }
+        });
+    });
+}
 
 
-// (
-//     async function (){
-//         const data = await getAcceptedApplicatns('MS Corp','Software Engineer','svlmehul@gmail.com');
-//         console.log(data);
-//     }
-// )()
+const getSchedules = async (cpobj)=>{
 
-// (
-//     async function(){
-//         const dt = await recievedjob({email:'savaliyamehul95@gmail.com'});
-//        console.log(dt);
-//     }
-// )()
+    return new Promise(async(res,rej)=>{
+        const con = await getConnect();
 
-// (async function(){
+        let qry = `SELECT jsemail, jsphone,ttl ,cpemail,date,hr,location, time FROM interview WHERE cpemail='${cpobj.cpemail}' AND cpphone=${cpobj.cpphone}`;
+        
+        qry=`select *  FROM interview i,jobseeker s where s.email = i.jsemail `;
 
+          con.query(qry,async(err,resx)=>{
+            if(err){
+                console.log("err : mysql>getSchedules",err);
+                rej(err);
+            }
+            else{
+            //     let intervws = [];
+            //     for(let item of resx) {
+            //         console.log("inside for lopp");
+            //         const qry2 = `SELECT * FROM jobseeker WHERE email='${item.jsemail}'`;  
+            //         const con = await getConnect();
+       
+            //  con.query(qry2,async(err,resx2)=>{
+            //             if(err){
+            //                 console.log("err : mysql>getschedules",err);
+            //                 rej(err);
+            //             }
+            //             else{
+                           
+                //              delete resx2[0].data;
+                //            let md = await getUserMedia(resx2[0].email,resx2[0].password);
+                //             resx2[0].resume = md[1].resume;
+                //             resx2[0].profile = md[1].profile;
+                            
+                //             delete resx2[0].password;
+                //             delete resx2[0].id;
+                //             delete resx2[0].coverletter;
+                //             delete resx2[0].active;
 
+                //             resx2[0].idate = item.date;
+                //             resx2[0].itime = item.time;
+                //             resx2[0].cpemail = item.cpemail;
+                //             resx2[0].jttl = item.ttl;
 
-//     const con = await getConnect();
-//     con.query('select pstr from postedjobs where ttl="3"',(err,data)=>{
-//         console.log(data[0].pstr.toString("hex"));
-//         fs.writeFile("./test.jpg",data[0].pstr.toString("binary"),(err)=>console.log(err));
-//     });
-// })()
+                //             intervws.push(resx2[0]);
+                           
+                //      con.end((err)=>{
+                //                 if(err){
+                //                  console.log("err : mysq>getSchedule",err);
+                //                  }
+                //                       });
+                //         }
+                //     });
+                                
+                // }
+                // console.log(intervws);
+                res(resx);
+                console.log(resx);
 
-// (async function(){
-//     const data = await getUserMedia('1234@123','1234');
-//     console.log(data);
-// })()
-
-// (async function(){
-//     const data = await getApplicantDetails('MS Corp','Devops ','svlmehul@gmail.com');
-//     console.log(data);
-// })()
-
-// (async function(){
-//     const data = await getJobDetails('123456','123456@123456','Dancer');
-//     console.log(data[1]);
-// })()
-
-// (async function(){
-//     try {
-     
-//     const responses = await checkAllAppliedJobForUser({"fname":"Mehul","lname":"Savaliya","email":"savaliyamehul95@gmail.com","phone":"9510754137","password":"savaliyamehul95@gmail.com"});
-//     console.log(responses[1]);   
-//     } catch (error) {
-//         console.log(error);
-//     }
-// })()
-
-// (async function(){
-//     const responses = await checkJobForUser({
-//         pjcpname:"123456",
-//         pjemail:"123456@123456",
-//         pjttl:"Dancer"
-//     },{"fname":"1","lname":"2","email":"123@123","phone":"123","password":"123"});
-//    // console.log(responses);
-// })()
-
-// (async function(){
-//     const rex = await applyjob({
-//         pjemail:"1",pjttl:"1",pjcpname:"1"
-//     },{"fname":"Test","lname":"Test","email":"A@A","phone":"Test","active":true,"password":"teee"})
-
-//     console.log(rex);
-// })()
-
-
-// (async function(){
-//     const emails = await getAllJobs();
-    
-//           console.log(emails);
+            }
             
-// })()
+        });
+    
+        con.end((err)=>{
+            if(err){
+             console.log("err : mysq>getSchedule",err);
+             }
+                  });
+                
+    });
+
+};
+   
 
 
-// (async function(){
-//     try {
-//         const resx = await deleteJob('123456@123456','44');
-//         console.log(resx);
-             
-//     } catch (error) {
-//     console.log(error);     
-//     }
-//         })()
-
-// (async function(){
-//     try {
-//         const data = await getJobs("svlmehul@gmail.com");
-//         // let jsn = JSON.parse("["+data[1]+"]")
-//             // for(let x of data){
-//             //     console.log(x);
-//             // }
-//             //console.log(data[1]);
-//     } catch (error) {
-//         console.log(error);
-//     }
-
-//     })()
-
-//getJobs("123456@123456");
-// const resx = await mysq.getJobs(obj.cpemail);
-// console.table(resx[1]);
-
- //insertJob("123456@123456",{test:123});
-
-// let f = async()=>{
-//     let cp ={
-//         "ROLE": "CP",
-//         "cpfname": "ss",
-//         "cplname": "ss",
-//         "cpname": "ss",
-//         "cpurl": "http:/test.com",
-//         "cpbshr": "",
-//         "cpaddr": "ss",
-//         "cpsize": "600",
-//         "cpemail": "ss@ss",
-//         "cpphone": "ss",
-//         "cppass": "ss"
-//         };
-//     const res = await registerCompany(cp);
-//     console.table(res[1]);
-// }
-// f();
-// getConnect().then((con)=>{
-//     insertRec(con,{
-//         fname:"MS",
-//         lname:"MS",
-//         email:"MS@Job",
-//         phone:"+919510754137",
-//         resume:"",
-//         coverletter:"",
-//         active:true,
-//         password:"MS"
-//     }).then((val)=>console.log(val))
-//     deleteRecord(con,"MS@Job","MS").then(val=>console.log(val))
-// })
-
-// console.log("start");
-// getConnect().then((con=>{
-//      getUser(con,'AA@AA','44').then(val=>console.log(val[0]))
-//      .catch(err=>console.log(err));
-// }))
-
-// console.log('end');
+module.exports = { getConnect, insertRec, deleteRecord, getUser, registerCompany,insertJob,getJobs,deleteJob,getAllJobs,applyjob,checkJobForUser,checkAllAppliedJobForUser,getJobDetails,getApplicantDetails,updateResumeProfilePath,getUserMedia,deleteJobUser,acceptJob
+,recievedjob,getAcceptedApplicatns,scheduleInterview,getSchedules};

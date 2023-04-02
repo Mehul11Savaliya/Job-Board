@@ -11,14 +11,6 @@ const closeModel = ()=>{
   forr.innerText="Schedule For : ";
 }
 
-function postInterview(event){
- event.preventDefault();
- const formdata = new FormData(event.target);
-  for(let item of formdata.entries()) {
-    console.log(item);
-  }
-  
-}
 
 const updaterow = (obj)=>{
 let tr = document.createElement('tr');
@@ -40,7 +32,9 @@ for(let item of datas) {
   updaterow(item);
 }
 
+let actiuser = {};
 const setInterView = (obj)=>{
+  actiuser = obj;
     prepareModel(obj);
 }
 
@@ -52,4 +46,35 @@ model.classList.add('model');
 model.classList.add('fade');
 model.classList.add('show');
 model.style="display:block";
+}
+
+
+  function postInterview(event){
+    closeModel();
+    event.preventDefault();
+    const formdata = new FormData(event.target);
+    formdata.append("email",actiuser.email);
+    formdata.append("phone",actiuser.phone);
+ formdata.append("ttl",new URLSearchParams(window.location.search).get('jobttl'));
+    let ob = {};
+    formdata.forEach((value,key)=>{
+        ob[key]=value;
+    });
+
+    document.getElementById('intrwloader').classList.remove('hide');
+  fetch("/job/setInterview",{
+    method:'post',
+    headers:{
+    'Accept': 'application/json',
+    'Content-type': 'application/json; charset=UTF-8'},
+    body:JSON.stringify(ob)
+  })
+  .then((val)=>{
+    return val.json()})
+  .then((data)=>{
+    document.getElementById('intrwloader').classList.add('hide');
+    alert(data.msg);
+   })
+  .catch((err)=>{console.log(err)
+    document.getElementById('intrwloader').classList.add('hide');});
 }

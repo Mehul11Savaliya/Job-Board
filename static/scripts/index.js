@@ -11,6 +11,7 @@ fetch("/getalljobs",{
 }).then(val=>{
   data = val;
   for(let x of val){
+    console.table(x);
     updateJobBoard(x);
   }
 })
