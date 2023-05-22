@@ -19,6 +19,9 @@ const app = new express();
 const host = `localhost`;
 const multer = require("multer");
 const { raw, json } = require("body-parser");
+const { getConnect } = require("./src/db.js");
+const { getUserProfile } = require("./src/libuserprofile.js");
+const { checkCompany } = require("./src/authenticate.js");
 const port = 5555;
 
 let viewcx = 0;
@@ -119,6 +122,239 @@ app.get("/logout", (req, res) => {
   });
 });
 
+app.get("/profile/:ctrl", async (req, res) => {
+  if (req.params['ctrl'] === 'userprofile') {
+    //console.log(req.session.userData);
+    let userData = JSON.parse(req.session.userData);
+
+    let qry = `SELECT * FROM userprofile WHERE email='${userData.email}';`;
+    const con = await getConnect();
+    let datax, sociallinks, skillsproachiev;
+    con.query(qry, (err, data, fields) => {
+      try {
+        datax = data[0];
+        sociallinks = JSON.parse(datax.sociallinks);
+        skillsproachiev = JSON.parse(datax.skillsproachiev);
+        if (userData.resume === undefined || userData.profile === undefined) {
+          userData.resume = '';
+          userData.profile = "./static/img/userprofile.webp";
+        }
+      } catch (error) {
+        datax = {};
+        sociallinks = {};
+        skillsproachiev = {};
+      }
+
+      //res.send(userData);
+      res.render('templates/userprofile.ejs', { data: datax, res: userData, social: sociallinks, spa: skillsproachiev });
+
+    });
+    con.end((e) => { if (e) console.log('can not close connection') });
+
+
+    //   console.log(userData);
+  }
+  if(req.params['ctrl']==='cpprofile'){
+    console.log(JSON.parse(req.session.cmpny));
+  res.render('templates/cpny.ejs',{data:JSON.parse(req.session.cmpny),social:{}});
+  }
+});
+
+
+//public profile rout 
+app.get("/profile/:type/:id", async (req, res) => {
+  if (req.params['type'] === 'usr') {
+    let email = req.params['id'];
+    if (email === '' || email === undefined) {
+      res.status(200).send("no profile found");
+    }
+    else {
+      try {
+        const uprfl = await getUserProfile(email);
+
+        const ure = await auth.checkUser(email);
+        const umedia = await mysq.getUserMedia(ure[1].email, ure[1].password);
+        delete ure['password'];
+
+        let resx = JSON.parse(ure[1].data);
+        resx.profile = umedia[1].profile;
+        resx.resume = umedia[1].resume;
+        resx.data = uprfl;
+        delete resx['password'];
+
+        let social = JSON.parse(uprfl.sociallinks);
+        let spa = JSON.parse(uprfl.skillsproachiev);
+
+        //     try {
+        //       resx.social = JSON.parse(uprfl.sociallinks);
+        //       resx.spa = JSON.parse(uprfl.skillsproachiev);
+        //       console.log(resx.social);
+        //       if(resx.uprfl.fullname===undefined){
+        //         res.status(200).send("no profile found");
+        //       }
+        //     } catch (error) {
+        //       resx.social = {}
+        //       resx.spa = {};
+        //     }
+        //     console.log(resx.social);
+
+        res.render('templates/public_userprofile.ejs', { res: resx, data: resx.data, social: social, spa: spa });
+
+      } catch (error) {
+        res.status(200).send("no profile found");
+      }
+    }
+  }
+  if (req.params['type'] === 'cpn') {
+    let email = req.params['id'];
+    if (email === '' || email === undefined) {
+      res.status(200).send("no profile found");
+    }
+    else {
+      let cpdata = {};
+    cpdata = await checkCompany(email);
+      console.log(cpdata);
+      let mediax  = await media.getCompanyMedia(cpdata[1][0].email,cpdata[1][0].pass);
+      cpdata.test = mediax[1][0].profile;
+      let obx = {...cpdata[1][0],...mediax[1][0]};
+    //  res.send(obx);
+    res.render('templates/public_cpny.ejs', {data : obx,social:JSON.parse(cpdata[1][0].social)});
+    }
+  }
+});
+
+
+app.post("/profile/:ctrl", async (req, res) => {
+
+  if (req.params['ctrl'] === 'upprofile') {
+    if (req.body.oemail === undefined) {
+      res.status(401).send("<h1 style='color:red'>Unauthorized 🐦</h1>");
+    } else {
+      let qarray = [];
+
+      let { fname, email, phone, address, about, roll, oemail } = req.body;
+      if (fname !== '') {
+
+        qarray.push(`UPDATE userprofile SET fullname='${fname}' where email='${oemail}'`);
+      }
+      if (email !== '') {
+        qarray.push(`UPDATE userprofile SET email='${email}' where email='${oemail}'`);
+      }
+      if (phone !== '') {
+        qarray.push(`UPDATE userprofile SET mobile='${phone}' where email='${oemail}'`);
+      }
+      if (address !== '') {
+        qarray.push(`UPDATE userprofile SET address='${address}' where email='${oemail}'`);
+      }
+      if (about !== '') {
+        qarray.push(`UPDATE userprofile SET about='${about}' where email='${oemail}'`);
+      }
+      if (roll !== '') {
+        qarray.push(`UPDATE userprofile SET roll='${roll}' where email='${oemail}'`);
+      }
+      let qrr = '';
+      for (let item of qarray) {
+        qrr += item + ";"
+      }
+
+      // console.log(qarray,fname,phone, address);
+      // res.status(201).json({data:qarray});
+
+      //    let qry = `UPDATE userprofile SET fullname='[value-2]',email='[value-3]',mobile='[value-4]',address='[value-5]',about='[value-6]',roll='' WHERE email='${email}'`;
+      const con = await getConnect();
+      con.query(qrr, (err, data) => {
+        if (err) {
+          console.log(err);
+          res.status(201).json({ msg: 'Not Able To Update' });
+        }
+        else {
+          res.status(201).json({ msg: 'Updated Successfully' });
+        }
+      });
+      con.end((e) => { if (e) console.log("not able to close connection : ", e) });
+    }
+
+  }
+  if (req.params['ctrl'] === 'upsocial') {
+    if (req.body.oemail === undefined) {
+      res.status(401).send("<h1 style='color:red'>Unauthorized 🐦</h1>");
+    } else {
+      let oemail = req.body.oemail;
+      if(req.body.cpn){
+        let dtx = {};
+        dtx = req.body;
+        delete dtx['cpn'];
+        delete dtx['oemail'];
+
+        const con = await getConnect();
+        const qry = `UPDATE company SET social='${JSON.stringify(dtx)}' WHERE email = '${oemail}'`;
+        con.query(qry, (err, data) => {
+          if (err) {
+            console.log(err);
+            res.status(201).json({ msg: 'Not Able To Update' });
+          }
+          else {
+            res.status(201).json({ msg: 'Updated Successfully' });
+          }
+        });
+        con.end((e) => { if (e) console.log("not able to close connection : ", e) });
+
+      }
+      else{
+
+    oemail = req.body.oemail;
+      let obx = req.body;
+      delete obx['oemail'];
+      const con = await getConnect();
+      const qry = `UPDATE userprofile SET sociallinks='${JSON.stringify(obx)}' WHERE email = '${oemail}';`;
+      //   console.log(qry);
+      con.query(qry, (err, data) => {
+        if (err) {
+          console.log(err);
+          res.status(201).json({ msg: 'Not Able To Update' });
+        }
+        else {
+          res.status(201).json({ msg: 'Updated Successfully' });
+        }
+      });
+      con.end((e) => { if (e) console.log("not able to close connection : ", e) });
+    }
+    }
+  }
+  if (req.params['ctrl'] === 'upskpoach') {
+    if (req.body.oemail === undefined) {
+      res.status(401).send("<h1 style='color:red'>Unauthorized 🐦</h1>");
+    } else {
+      let oemail = req.body.oemail;
+      let obx = req.body;
+      let newobx = {};
+      for (let key in obx) {
+        // console.log(key.toString().split('_').reverse()[0]);
+        if (key.toString().split('_').reverse()[0] === '' || obx[key] === '') {
+          continue;
+        }
+        else {
+          newobx[key] = obx[key];
+        }
+      }
+      const con = await getConnect();
+      const qry = `UPDATE userprofile SET skillsproachiev='${JSON.stringify(newobx)}' WHERE email = '${oemail}';`;
+      //   console.log(qry);
+      con.query(qry, (err, data) => {
+        if (err) {
+          console.log(err);
+          res.status(201).json({ msg: 'Not Able To Update' });
+        }
+        else {
+          res.status(201).json({ msg: 'Updated Successfully' });
+        }
+      });
+      con.end((e) => { if (e) console.log("not able to close connection : ", e) });
+    }
+
+  }
+});
+
 app.post("/register", async (req, res) => {
   let obj = {};
   obj.fname = req.body.regfname;
@@ -131,16 +367,17 @@ app.post("/register", async (req, res) => {
 
   const resx = await auth.checkUser(obj.email);
 
-  if (resx) {
+  if (resx[0]) {
     //user exist
     const resp = {};
     resp.exist = "Can not Create Accout User Alredy Exist!";
     res.status(200).render("register.ejs", { result: resp });
   } else {
     const insrtflag = mysq.insertRec(obj);
-    req.session.userDatareg = obj;
-    req.session.save();
-    res.render("profile.ejs", { res: req.session.userDatareg });
+    // req.session.userDatareg = obj;
+    // req.session.save();
+    // res.render("profile.ejs", { res: req.session.userDatareg });
+    res.redirect('/signin');
   }
 });
 
@@ -407,10 +644,10 @@ app.get("/cpprofile/:type", async (req, res) => {
 
 
       let applic = await mysq.getSchedules(cpn);
-      console.log(applic);
+      //console.log(applic);
 
-      // res.status(200).render('schedules.ejs',{data:cpn,apps:applic});
-      res.status(201).json(applic);
+      res.status(200).render('schedules.ejs', { data: cpn, apps: applic });
+      //res.status(201).json(applic);
     } catch (error) {
       console.log(error);
       res.status(200).send("<h1>Login First! sir🐦</h1>");
@@ -449,13 +686,19 @@ app.post("/job/:type", async (req, res) => {
   if (req.params["type"] === "getApplicants") {
     //   console.log(req.body);
     let da = req.body;
-    const data = await mysq.getApplicantDetails(
+    let data = await mysq.getApplicantDetails(
       JSON.parse(req.session.cmpny).cpname,
       da.jbttl,
       da.jbemail
     );
 
+
     if (data[1].count > 0) {
+      let i = 0;
+      for (let item of data[1]['application']) {
+        data[1]['application'][i].apprfl = await getUserProfile(item.email);
+        i++;
+      }
       res.status(201).json(data[1]);
     } else {
       res.status(201).json({ ack: "not found" });
@@ -514,12 +757,28 @@ app.post("/job/:type", async (req, res) => {
       }
     }
   }
+  if (req.params['type'] === 'getInterviewDetails') {
+    try {
+      //  console.log(req.body);
+      const interview = await mysq.getInterviewDetails(JSON.parse(req.session.userData), req.body.ttl);
+      // console.log(interview);
+      res.status(201).json({
+        data: interview
+      });
+    } catch (error) {
+      req.status(500).json({
+        'msg': 'try again'
+      });
+      console.log(error);
+    }
+  }
 });
 
 app.post("/upload/:type", async (req, res) => {
   if (req.params["type"] === "resume_profile") {
     const form = new formidable.IncomingForm();
     let userob = JSON.parse(req.session.userData);
+
 
     if (!(userob.fname === undefined || userob.phone === undefined)) {
       form.parse(req, async function (err, fields, files) {
@@ -673,6 +932,9 @@ app.post("/upload/:type", async (req, res) => {
   }
 });
 
+
+
+
 //chatting
 app.get("/chat/:id", async (req, res) => {
   let datax = JSON.parse(req.session.userData);
@@ -773,11 +1035,11 @@ app.post("/api/:what", async (req, res) => {
     obj.password = req.body.regpass;
     obj.profile = "./static/img/userprofile.webp";
 
-  //  console.log(obj);
+    //  console.log(obj);
 
     const resx = await auth.checkUser(obj.email);
 
-    if (resx) {
+    if (resx[0]) {
       //user exist
       const resp = {};
       resp.exist = "Can not Create Accout User Alredy Exist!";
@@ -1053,7 +1315,7 @@ app.post("/api/:what", async (req, res) => {
     }
   }
   if (req.params['what'] === 'getPostedJobs') {
-  //  console.log(req.body);
+    //  console.log(req.body);
     const cp = await auth.getCompany(
       req.body.cpemail,
       req.body.cppass
@@ -1088,30 +1350,30 @@ app.post("/api/:what", async (req, res) => {
 
       const resx = await mysq.getJobs(obj.cpemail);
 
-     res.status(201).json(resx[1]);
+      res.status(201).json(resx[1]);
+    }
   }
-}
-  if(req.params['what']==='deleteJob'){
-    
-  try {
-   // console.table(req.body);
-    const resx = await mysq.deleteJob(
-      req.body.cpemail.replaceAll("'", ""),
-      req.body.cpttl.replaceAll("'", ""),
-      req.body.cpname
-    );
-    media.deleteJobMedia(req.body.cpemail.replaceAll("'", ""),
-      req.body.cpttl.replaceAll("'", ""),
-      req.body.extimg.replaceAll("'", ""));
-    res.status(201).json({ msg: resx[1] });
-   
-  } catch (error) {
-    res.status(201).json({ msg:'try again later' });
-    console.log(error);
-  }
+  if (req.params['what'] === 'deleteJob') {
+
+    try {
+      // console.table(req.body);
+      const resx = await mysq.deleteJob(
+        req.body.cpemail.replaceAll("'", ""),
+        req.body.cpttl.replaceAll("'", ""),
+        req.body.cpname
+      );
+      media.deleteJobMedia(req.body.cpemail.replaceAll("'", ""),
+        req.body.cpttl.replaceAll("'", ""),
+        req.body.extimg.replaceAll("'", ""));
+      res.status(201).json({ msg: resx[1] });
+
+    } catch (error) {
+      res.status(201).json({ msg: 'try again later' });
+      console.log(error);
+    }
   }
 
-  if(req.params['what']==='getApplicants'){
+  if (req.params['what'] === 'getApplicants') {
     let da = req.body;
     try {
       const data = await mysq.getApplicantDetails(
@@ -1122,15 +1384,335 @@ app.post("/api/:what", async (req, res) => {
       res.status(201).json(data);
     } catch (error) {
       res.status(201).json({
-        msg:'can retrive info 🐦 '
+        msg: 'can retrive info 🐦 '
       });
       console.log(error);
     }
-    
+
   }
+  if (req.params['what'] === 'acceptJob') {
+    try {
+      const data = await mysq.acceptJob(req.body.cemail, req.body.ttl, req.body.uemail);
+      res.status(201).json({ msg: "Accepted ✔" });
+    } catch (error) {
+      res.status(201).json({ msg: "Cannot Acept Now Try Again Some Time " });
+    }
+  }
+  if (req.params['what'] === 'setInterview') {
+    console.table(req.body);
+    let cmpn = {};
+    cmpn.cpemail = req.body.cpemail;
+    cmpn.cpphone = req.body.cpphone;
 
+    if (cmpn === undefined) {
+      res.status(201).json({ msg: "Can Not Set Interview Right Now Try Again Later If Possible 🐦" });
+    }
+    else {
+      try {
+        //console.log(req,req.body);
+        const data = await mysq.scheduleInterview(cmpn, req.body);
+        res.status(201).json({ msg: "Interview Scheduled!" });
+      } catch (error) {
+        console.log("err : app>job/scheduleinterview", error);
+        res.status(201).json({ err: `Error 🐦:${error.message}` });
+      }
+    }
+  }
+  if (req.params['what'] === 'getSchedules') {
+    try {
+      const cp = await auth.getCompany(
+        req.body.cpemail,
+        req.body.cppass
+      );
+
+      let obj = {};
+
+      cp[1] = cp[1][0];
+      if (cp[1] === undefined) {
+      }
+      else {
+        obj.cpfname = cp[1].fname;
+        obj.cplname = cp[1].lname;
+        obj.cpname = cp[1].name;
+        obj.cpurl = cp[1].url;
+        obj.cpaddr = cp[1].addr;
+        obj.cpsize = cp[1].size;
+        obj.cpemail = cp[1].email;
+        obj.cpphone = cp[1].phone;
+        obj.cppass = cp[1].pass;
+        obj.cpactive = cp[1].active;
+        obj.cpjobs = cp[1].jobs;
+        obj.cpcanjobs = cp[1].canjobs;
+        obj.cpreview = cp[1].review;
+
+        const prof = await media.getCompanyMedia(obj.cpemail, obj.cppass);
+        if (prof[1][0] === undefined) {
+          obj.profile = "./static/img/userprofile.jpg";
+        } else {
+          obj.profile = prof[1][0].profile;
+        }
+      }
+      let applic = await mysq.getSchedules(obj);
+
+      res.status(201).json(applic);
+    } catch (error) {
+      console.log(error);
+      res.status(20).json({
+        msg: "Login First! sir🐦"
+      });
+    }
+  }
+  if (req.params['what'] === 'deleteSChedule') {
+    console.log("req for delete schedule started");
+    // console.table(req.body);
+    try {
+      const result = mysq.deleteSchedule(req.body.jsemail, req.body.ttl, req.body.cpemail, req.body.cpphone);
+      res.status(201).json({
+        msg: "Schedule Removed!"
+      });
+      console.log("req for schedule ended");
+
+    } catch (error) {
+      res.status(201).json({
+        msg: "Not Able To Remove Schedule!"
+      });
+      console.log(error);
+    }
+  }
+  if (req.params['what'] === 'getInterviewDetails') {
+    let jobseeker = await auth.getUserx(
+      req.body.jsemail,
+      req.body.password
+    );
+
+    jobseeker = jobseeker[0];
+
+    let jobseekernew = {};
+    jobseekernew.fname = jobseeker.firstname;
+    jobseekernew.lname = jobseeker.lastname;
+    jobseekernew.email = jobseeker.email;
+    jobseekernew.phone = jobseeker.phone;
+    jobseekernew.password = jobseeker.password;
+
+    let omedia;
+    try {
+      omedia = await mysq.getUserMedia(jobseekernew.email, jobseekernew.password);
+      jobseekernew.resume = omedia[1].resume;
+      jobseekernew.profile = omedia[1].profile;
+    } catch (err) {
+      console.log(err);
+      jobseekernew.resume = "";
+      jobseekernew.profile = "./static/img/userprofile.webp";
+    }
+
+    //  console.table(jobseekernew);
+    try {
+      const result = await mysq.getInterviewDetails(jobseekernew, req.body.ttl);
+      console.log(result);
+      res.status(201).json(result);
+    } catch (error) {
+      console.log(error);
+      res.status(503).json({
+        msg: "server error try again"
+      });  //503 => service not available
+    }
+
+  }
 });
+app.post("/upload2/:type", async (req, res) => {
+  if (req.params["type"] === "resume_profile") {
+    const form = new formidable.IncomingForm();
 
+    form.parse(req, async function (err, fields, files) {
+      let jobseeker = await auth.getUserx(
+        fields.email,
+        fields.pass
+      );
+
+      jobseeker = jobseeker[0];
+
+      let jobseekernew = {};
+      jobseekernew.fname = jobseeker.firstname;
+      jobseekernew.lname = jobseeker.lastname;
+      jobseekernew.email = jobseeker.email;
+      jobseekernew.phone = jobseeker.phone;
+      jobseekernew.password = jobseeker.password;
+
+      let omedia;
+      try {
+        omedia = await mysq.getUserMedia(jobseekernew.email, jobseekernew.password);
+        jobseekernew.resume = omedia[1].resume;
+        jobseekernew.profile = omedia[1].profile;
+      } catch (err) {
+        console.log(err);
+        jobseekernew.resume = "";
+        jobseekernew.profile = "./static/img/userprofile.webp";
+      }
+
+
+      if (!(jobseekernew.fname === undefined || jobseekernew.phone === undefined)) {
+
+        // console.dir(files);
+
+        var oldPathResume = files.resume.filepath;
+        var oldPathProfile = files.profilepic.filepath;
+
+        let resume_ext = `.${files.resume.mimetype.split("/")[1]}`;
+        let profilepic_ext = `.${files.profilepic.mimetype.split("/")[1]}`;
+
+        if (
+          files.resume.mimetype.split("/")[1] ===
+          "vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ) {
+          resume_ext = ".docx";
+        }
+
+        let resumename =
+          "resm_" +
+          new Date().getTime().toString() +
+          "_" +
+          jobseekernew.lname +
+          "_" +
+          jobseekernew.phone +
+          resume_ext;
+        let profilepicname =
+          "pp_" +
+          new Date().getTime() +
+          "_" +
+          jobseekernew.lname +
+          "_" +
+          jobseekernew.phone +
+          profilepic_ext;
+
+        var newResumePath = path.join(
+          __dirname,
+          "./public/userupload/resume/" + resumename
+        );
+        var newProfilePath = path.join(
+          __dirname,
+          "./public/userupload/pp/" + profilepicname
+        );
+
+        let rawresume = fs.readFileSync(oldPathResume);
+        let rawProfile = fs.readFileSync(oldPathProfile);
+
+        let allgood = true;
+
+        let updatedb = await mysq.updateResumeProfilePath(
+          jobseekernew,
+          "./public/userupload/resume/" + resumename,
+          "./public/userupload/pp/" + profilepicname
+        );
+
+        if (!updatedb[0]) {
+          allgood = false;
+        } else {
+          fs.writeFileSync(newResumePath, rawresume, function (err) {
+            if (err) allgood = false;
+          });
+
+          fs.writeFileSync(newProfilePath, rawProfile, function (err) {
+            if (err) allgood = false;
+          });
+        }
+        if (allgood) {
+          jobseekernew.resume = newResumePath;
+          jobseekernew.profile = newProfilePath;
+
+          req.session.usrresume = "./public/userupload/resume/" + resumename;
+          req.session.save();
+
+          req.session.userprofile = "./public/userupload/pp/" + profilepicname;
+          req.session.save();
+
+          res.status(200).render("templates/userprofile_uploaderesume.ejs", {
+            data: { msg: "Successfully Uploaded" },
+          });
+        } else {
+          res.status(200).render("templates/userprofile_uploaderesume.ejs", {
+            data: { msg: "Error in uploading" },
+          });
+        }
+
+      } else {
+        res.status(200).render("templates/userprofile_uploaderesume.ejs", {
+          data: { msg: "You Have To Login First" },
+        });
+
+      }
+    });
+
+  }
+  if (req.params["type"] === "cpupdatemedia") {
+
+    // console.log(cmpny);
+
+    const form = new formidable.IncomingForm();
+    form.parse(req, async function (err, fields, files) {
+      let cmpny = await auth.getCompany(fields.cpemail, fields.cppass);
+      cmpny = cmpny[1][0];
+      //  console.dir(fields,files);
+      // console.dir(cp);
+      if (cmpny.fname === undefined) {
+
+        res.status(201).send("<h1>Server Error Try again.</h1>");
+      }
+      else {
+
+        var oldPathProfile = files.profilepic.filepath;
+
+        let profilepic_ext = `.${files.profilepic.mimetype.split("/")[1]}`;
+        let profilepicname =
+          "pp_" +
+          new Date().getTime() +
+          "_" +
+          cmpny.name +
+          "_" +
+          cmpny.phone +
+          profilepic_ext;
+
+        var newProfilePath = path.join(
+          __dirname,
+          "./public/cpupload/pp/" + profilepicname
+        );
+
+        let rawProfile = fs.readFileSync(oldPathProfile);
+
+        let allgood = true;
+
+        let updatedb = await media.updateCPProfilePath(
+          cmpny,
+          "./public/cpupload/pp/" + profilepicname
+        );
+
+        if (!updatedb[0]) {
+          allgood = false;
+          // console.log("db not good");
+        } else {
+          fs.writeFileSync(newProfilePath, rawProfile, function (err) {
+            if (err) allgood = false;
+          });
+        }
+        if (allgood) {
+          cmpny.cpprofile = newProfilePath;
+
+          req.session.cpprf = "./public/userupload/resume/" + profilepicname;
+          req.session.save();
+
+          res.status(200).render("templates/cpprofile_uploadmedia.ejs", {
+            data: { msg: "Successfully Uploaded" },
+          });
+        } else {
+          res.status(200).render("templates/cpprofile_uploadmedia.ejs", {
+            data: { msg: "Error in uploading" },
+          });
+        }
+      }
+
+    });
+
+  }
+});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -1154,13 +1736,13 @@ app.post('/tesxt', upload.fields([{ name: 'file1', maxCount: 1 }, { name: 'file2
 
   try {
     let obj2 = JSON.parse(req.body.data);
-   
+
     const cp = await auth.getCompany(
       obj2['sign-email'],
       obj2['sign-pass']
     );
 
-   
+
 
     let obj = {};
 
@@ -1208,7 +1790,7 @@ app.post('/tesxt', upload.fields([{ name: 'file1', maxCount: 1 }, { name: 'file2
       delete obj2['pjfile'];
       delete obj2['pjposter'];
 
-      const result = await mysq.insertJob(obj, obj2,pathx+pjpostername,pathx+pjfilename , Date.now());
+      const result = await mysq.insertJob(obj, obj2, pathx + pjpostername, pathx + pjfilename, Date.now());
 
       obj2.pjposter = pathx + pjpostername;
       obj2.pjfile = pathx + pjfilename;

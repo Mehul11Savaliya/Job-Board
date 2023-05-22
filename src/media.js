@@ -8,7 +8,7 @@ const updateCPProfilePath = async (cpobj, profilepath) => {
     console.time("qry:updateCPProfilePath");
     return new Promise(async (res, rej) => {
         const con = await mysq.getConnect();
-        const checkqry = `SELECT * FROM cpmedia WHERE email='${cpobj.cpemail}' and pass='${cpobj.cppass}'`;
+        const checkqry = `SELECT * FROM cpmedia WHERE email='${cpobj.cpemail||cpobj.email}' and pass='${cpobj.cppass||cpobj.pass}'`;
         let sresult = { email: 'nub' };
         con.query(checkqry, (err, data) => {
             if (err) {
@@ -23,7 +23,7 @@ const updateCPProfilePath = async (cpobj, profilepath) => {
                 try {
                     fs.unlinkSync(path.join(require.main.path, sresult.profile), (err) => { console.log("media>updateCPProfilePath", err) });
 
-                    qry = `UPDATE cpmedia SET profile='${profilepath}' WHERE email='${cpobj.cpemail}' and pass ='${cpobj.cppass}'`;
+                    qry = `UPDATE cpmedia SET profile='${profilepath}' WHERE email='${cpobj.cpemail||cpobj.email}' and pass ='${cpobj.cppass||cpobj.pass}'`;
                     con.query(qry, (err, resx) => {
                         if (err) {
                             console.log('media>updateCPProfilePath', err);
@@ -43,7 +43,7 @@ const updateCPProfilePath = async (cpobj, profilepath) => {
 
                 } catch (error) {
 
-                    qry = `INSERT INTO cpmedia(email, pass, profile) VALUES ('${cpobj.cpemail}','${cpobj.cppass}','${profilepath}')`;
+                    qry = `INSERT INTO cpmedia(email, pass, profile) VALUES ('${cpobj.cpemail||cpobj.email}','${cpobj.cppass||cpobj.pass}','${profilepath}')`;
                     con.query(qry, (err, resx) => {
                         if (err) {
                             console.log('media>updateCPProfilePath', err);

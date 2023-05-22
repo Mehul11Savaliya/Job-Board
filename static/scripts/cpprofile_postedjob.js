@@ -120,9 +120,9 @@ const generateUserCards = (data, jbttl) => {
     <div class="card" style="width: 20rem;">
   <img  src="${obj.profile.replace('.',"")}" onerror="this.src='/static/img/userprofile.webp'" class="card-img-top" alt="...">
   <div class="card-body">
-    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+    <p class="card-text">${obj.apprfl===undefined?'':obj.apprfl.about}</p>
     <ul class="list-group list-group-flush">
-    <li class="list-group-item"><b>${obj.fname +" "+obj.lname}</b></li>
+    <li class="list-group-item"><b>${obj.fname +" "+obj.lname} <small>(${obj.apprfl===undefined?'':obj.apprfl.roll})</small></b></li>
     <li class="list-group-item"><b>Email : </b>${obj.email}</li>
     <li class="list-group-item"><b>Phone : </b>${obj.phone}</li>
     <li class="list-group-item"><b>Resume : </b><a class='btn btn-outline-info' target='_blank' href='${obj.resume.replace(".","")}'>Download</a></li>
@@ -130,6 +130,7 @@ const generateUserCards = (data, jbttl) => {
   <div class="card-footer">
   <a href="#" onclick="preparemodal('${obj.email}')" class="btn btn-info card-link">Message</a>
   <a href="#" onclick="acceptMessage('${obj.email}','${jbttl}')" class="btn btn-success card-link">Accept</a>
+  <a href="/profile/usr/${obj.email}" class="btn btn-info card-link">View Profile</a>
   </div>
 
     </div>

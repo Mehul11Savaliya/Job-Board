@@ -6,7 +6,7 @@ try{
     const con = await mysq.getConnect();
 
     p = new Promise((res,rej)=>{
-        const qry = `select email from jobseeker where email='${emai}'`;
+        const qry = `select * from jobseeker where email='${emai}'`;
         con.query(qry,(err,data)=>{
             if(err){ rej(false);}
             else
@@ -14,7 +14,7 @@ try{
                 if(data[0]!==undefined){
                let email = data[0].email;
                if(emai==email){
-                 res(true);
+                 res([true,data[0]]);
                }
                else{
                 res(false);

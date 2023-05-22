@@ -5,34 +5,25 @@
         <thead class="table-dark">
             <tr>
                 <th scope="col">#</th>
-                <th scope="col">First Name</th>
-                <th scope="col">Last Name</th>
+                <th scope="col">Full Name</th>
+                <th scope="col">Position</th>
                 <th scope="col">Date :: Time</th>
                 <th scope="col">Details</th>
               </tr>
         </thead>
         <tbody>
-
-              <% for(const item of apps){ %>
-                <tr>
-                    <th colspan="5" class="table-secondary" style="text-align: center;"><%= item.ttl+'('+item.count+')'%></th>
-                    <% let i =0;%>
-                 <%   for (const aps of item.application) { %>
-                    <tr>
-                        <th scope="col"  ><%=++i%>
-                            <img src="<%=aps.profile.replace('.','')%>" onerror="this.src='/static/img/userprofile.webp'"  alt="ProfileImage" width="30" height="24"
-                            class="d-inline-block align-text-top" >
-                        </th>
-                    <td ><%= aps.fname%></td>
-                    <td ><%= aps.lname%></td>
-                    <td >0</td>
-                    <td ></td>
-                </tr>
-                   <%}%>
-                </tr>
-                <%}%>
-          <tr>
-
+             
+          <%
+          let i =1;
+          for (const item of apps) {%>
+            <tr>
+            <td scope="row"><%=i++%></td>
+            <td><%=item.firstname+" "+item.lastname%></td>
+            <td><%=item.ttl%></td>
+            <td><%=item.date +" :: "+item.time %></td>
+            <td><button data-schedule='<%=JSON.stringify(item)%>' class="btn btn-outline-primary" onclick="viewSchedule(event,<%=item.id%>,'<%=item.cpemail%>','<%=item.cpphone%>','<%=item.email%>','<%=item.ttl%>')">View</button></td>
+          </tr>
+          <%}%>
           <!-- <tr>
             <td scope="row">1</td>
             <td>aa</td>
@@ -42,6 +33,10 @@
           </tr> -->
         </tbody>
       </table>
+     <!-- <span id="noob"></span> -->
+      <dialog id="noob">
+      </dialog>
+      <script type="text/javascript" src="/static/scripts/schedule.js"></script>
 </div>
 
 <%- include("./templates/cpprofile_footer.ejs")-%>

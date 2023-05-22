@@ -2,6 +2,7 @@ const mysql = require("mysql");
 const path = require("path");
 const fs = require("fs");
 const { type } = require("os");
+const {initialize} = require('./libuserprofile');
 const getConnect = async () => {
     return await new Promise((res, rej) => {
     let con = mysql.createConnection({
@@ -129,11 +130,20 @@ const insertRec = async (obj) => {
 
         const con = await getConnect();
 
-        con.query(qry, (err, resx) => {
+        con.query(qry, async(err, resx) => {
             if (err) {
                 rej("Error in Inserting Data");
             }
             else {
+                try {
+                 
+                const ires = await initialize(obj.email);
+                if(!ires){
+                    console.log('userprofile not initialozed',ires);
+                }   
+                } catch (errror) {
+                 console.log('error in initialize ',errror);   
+                }
                 res(`${resx.affectedRows} rows inserted"`);
             }
         })
@@ -744,12 +754,13 @@ const recievedjob = async (userob)=>{
 }
 
 const scheduleInterview =  (cmpobj,uobj)=>{
+    console.table(uobj);
     return new Promise(async(res,rej)=>{
         const con = await getConnect();
 
-        // console.log(cmpobj,uobj);
+        console.log(cmpobj,uobj);
         const qry = `INSERT INTO interview(jsemail,jsphone, ttl,cpemail, cpphone, location,hr, hr_email, hr_phone, date, time, extradetails,req_doc)
-     VALUES ('${uobj.email}','${uobj.phone}',${uobj.ttl}','${cmpobj.cpemail}','${cmpobj.cpphone}','${uobj.location}','${uobj.hrname}','${uobj['hrcontacts-email']}','${uobj['hrcontacts-phone']}','${uobj.date}','${uobj.time}','${uobj.extradetail}','${uobj.reqrdocs}')`;
+     VALUES ('${uobj.email}','${uobj.phone}','${uobj.ttl}','${cmpobj.cpemail}','${cmpobj.cpphone}','${uobj.location}','${uobj.hrname}','${uobj['hrcontacts-email']}','${uobj['hrcontacts-phone']}','${uobj.date}','${uobj.time}','${uobj.extradetail}','${uobj.reqrdocs}')`;
 
         con.query(qry,(err,resx)=>{
             if(err){
@@ -785,48 +796,26 @@ const getSchedules = async (cpobj)=>{
                 rej(err);
             }
             else{
-            //     let intervws = [];
-            //     for(let item of resx) {
-            //         console.log("inside for lopp");
-            //         const qry2 = `SELECT * FROM jobseeker WHERE email='${item.jsemail}'`;  
-            //         const con = await getConnect();
-       
-            //  con.query(qry2,async(err,resx2)=>{
-            //             if(err){
-            //                 console.log("err : mysql>getschedules",err);
-            //                 rej(err);
-            //             }
-            //             else{
-                           
-                //              delete resx2[0].data;
-                //            let md = await getUserMedia(resx2[0].email,resx2[0].password);
-                //             resx2[0].resume = md[1].resume;
-                //             resx2[0].profile = md[1].profile;
-                            
-                //             delete resx2[0].password;
-                //             delete resx2[0].id;
-                //             delete resx2[0].coverletter;
-                //             delete resx2[0].active;
+                let data=[];
 
-                //             resx2[0].idate = item.date;
-                //             resx2[0].itime = item.time;
-                //             resx2[0].cpemail = item.cpemail;
-                //             resx2[0].jttl = item.ttl;
-
-                //             intervws.push(resx2[0]);
-                           
-                //      con.end((err)=>{
-                //                 if(err){
-                //                  console.log("err : mysq>getSchedule",err);
-                //                  }
-                //                       });
-                //         }
-                //     });
-                                
-                // }
-                // console.log(intervws);
-                res(resx);
-                console.log(resx);
+                for(let val of resx) {
+                    let omedia = await getUserMedia(val.jsemail, val.password);
+                    //console.table(omedia);
+                    val.resume = omedia[1].resume;
+                    val.profile = omedia[1].profile;
+                    delete val['password'];
+                    delete val['data'];
+                    delete val['coverletter'];
+                    delete val['active'];
+                    delete val['jsphone'];
+                    delete val['jsemail'];
+                   
+                    data.push(val);
+                }
+                
+          
+                res(data);
+                //console.log(data);
 
             }
             
@@ -841,8 +830,56 @@ const getSchedules = async (cpobj)=>{
     });
 
 };
+
+const deleteSchedule = (jsemail,ttl,cpemail,cpphone)=>{
+        return new Promise(async (res,rej)=>{
+            try{
+
+            
+            const con = await getConnect();
+            const qury = `DELETE FROM interview WHERE jsemail='${jsemail}' AND ttl='${ttl}' AND cpemail='${cpemail}' AND cpphone = '${cpphone}'`;
+            con.query(qury,(err,resx)=>{
+                    if(err){
+                        rej(err);
+                    }
+                    else{
+                        res(true);
+                    }
+            });
+
+            con.end((errr)=>{
+                console.log("err: mysql>deleteSchedule",errr);
+            });
+        }catch(erx){
+            console.log("error in deleteSchedule ",erx);
+        }
+        });
+}
    
+const getInterviewDetails =  (jobseeker,ttl)=>{
+    return new Promise(async (res,rej)=>{
+        const con = await getConnect();
+        const qry =`SELECT * FROM interview WHERE jsemail='${jobseeker.email}' AND ttl='${ttl}'`;
+     // console.log(qry);
+        con.query(qry,(err,resx)=>{
+           // console.log(err,resx);
+            if(err){
+              
+          //      console.log("err : mysq>getInterviewSchedule : "+err);
+                rej(err);
+
+            }
+            else{
+               console.table(resx[0]);
+                res(resx[0]);
+            }
+        });
+        con.end((err)=>{
+            console.log("err: mysql>getInterviewDetails",err);
+        });
+    });
+}
 
 
 module.exports = { getConnect, insertRec, deleteRecord, getUser, registerCompany,insertJob,getJobs,deleteJob,getAllJobs,applyjob,checkJobForUser,checkAllAppliedJobForUser,getJobDetails,getApplicantDetails,updateResumeProfilePath,getUserMedia,deleteJobUser,acceptJob
-,recievedjob,getAcceptedApplicatns,scheduleInterview,getSchedules};
+,recievedjob,getAcceptedApplicatns,scheduleInterview,getSchedules,deleteSchedule,getInterviewDetails};
